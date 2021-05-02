@@ -20,6 +20,7 @@ An implementation of Conway's Game of Life.
 ### Usage
 * Run `gameoflife.py`.
 * Draw cells with the left mouse, or erase them with the right mouse.
+* Zoom with middle mouse and pan the screen with the scroll wheel.
 * The speed of the simulation can be changed with keys 1-9.
 * The algorithm can be changed with keys a, b, or c, where the algorithms are breadth-first, best-first and A* respectively.
 * The simulation can be paused and resumed with space, or cleared entirely with escape.
@@ -34,7 +35,8 @@ Visualization of three pathfinding algorithms. `pathfinding.py`
 
 ### Usage
 * Run `pathfinding.py`.
-* Draw a maze with the left mouse, then place two nodes using the right mouse. Press space to watch the algorithm find a path between the two.
+* Draw/erase a maze with the left mouse, then place two nodes using the right mouse. Press space to watch the algorithm find a path between the two.
+* Zoom with middle mouse and pan the screen with the scroll wheel.
 * The speed of the simulation can be changed with keys 1-9.
 * The algorithm can be changed with keys a, b, or c, where the algorithms are breadth-first, best-first and A* respectively.
 * The simulation can be paused and resumed with space, or cleared entirely with escape.
