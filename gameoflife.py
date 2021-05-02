@@ -17,7 +17,6 @@ class GameOfLifeGrid(DrawGrid):
         )
 
         self.paused = True
-        self.thread_running = False
         self.cell_color = cell_color
 
 
@@ -33,7 +32,6 @@ class GameOfLifeGrid(DrawGrid):
         self.set_timer(self.iteration_delay)
 
         self.thread = None
-        self.update_thread = None
 
         self.change_list = []
         self.alive_cells = set()
