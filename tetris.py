@@ -29,13 +29,14 @@ class TetrisGrid(PyGrid):
 
     def __init__(self, background_color, cell_color, cyan, yellow,
                  magenta, green, blue, red, orange, cell_size=20, fps=60,
-                 board_width=10, board_height=20, difficulty_rate=40,
+                 board_width=10, board_height=20, difficulty_rate=1,
                  left_padding=1, right_padding=1, top_padding=1, bottom_padding=1,
-                 min_hold_time=3, ticks_per_drop=5, tick_speed=0.05):
+                 min_hold_time=3, ticks_per_drop=15, tick_speed=0.05):
 
         self.cell_color = cell_color
         self.score = 0
         self.difficulty = 0
+        self.level_cap = difficulty_rate
         self.difficulty_rate = difficulty_rate
 
         self.game_state = PLAYING
@@ -177,12 +178,14 @@ class TetrisGrid(PyGrid):
 
 
     def set_difficulty(self):
-        self.ticks_per_drop = max(
-            1,
-            int(self.default_ticks_per_drop * \
-                (1 - (self.difficulty / self.difficulty_rate))
-            )
-        )
+        if self.ticks_per_drop == 1:
+            return
+
+        new_level, self.difficulty = divmod(self.difficulty, self.level_cap)
+
+        if new_level:
+            self.level_cap += self.difficulty_rate
+            self.ticks_per_drop -= 1
 
     def erase_next_tetro(self, animate=True):
         preview, is_odd = PREVIEWS[self.next_tetro]
