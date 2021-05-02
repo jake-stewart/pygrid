@@ -37,7 +37,7 @@ Visualization of three pathfinding algorithms. `pathfinding.py`
 * Run `tetris.py`.
 * Use WASD, arrow keys, or hjkl as movement controls.
 * Press space to drop the current shape to the bottom.
-* Press q to the current shape.
+* Press q to store the current shape.
 * Press any key to restart after you die.
 
 ### Snake
