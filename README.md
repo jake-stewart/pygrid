@@ -5,8 +5,10 @@ An infinite, zoomable, pannable, resizable, multi-threaded grid written in pytho
 
 `draw_grid.py` extends the PyGrid class to add smooth drawing. `gameoflife.py` and `pathfinding.py` both use this.
 
-### Requirements
+#### Requirements
 * Pygame `python3 -m pip install pygame`
+
+<br />
 
 # Examples
 
@@ -23,6 +25,8 @@ An implementation of Conway's Game of Life.
 * The simulation can be paused and resumed with space, or cleared entirely with escape.
 * The grid can be cleared with delete.
 
+<br />
+
 ## Pathfinding
 Visualization of three pathfinding algorithms. `pathfinding.py`
 
@@ -36,6 +40,8 @@ Visualization of three pathfinding algorithms. `pathfinding.py`
 * The simulation can be paused and resumed with space, or cleared entirely with escape.
 * The grid can be cleared with delete.
 
+<br />
+
 ## Tetris
 
 ![tetris_screenshot](./screenshots/tetris.png)
@@ -46,6 +52,8 @@ Visualization of three pathfinding algorithms. `pathfinding.py`
 * Press space to drop the current shape to the bottom.
 * Press q to store the current shape.
 * Press any key to restart after you die.
+
+<br />
 
 ## Snake
 
