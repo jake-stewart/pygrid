@@ -469,26 +469,29 @@ class TetrisGrid(PyGrid):
         digits = list(map(int, str(self.score)[-3:]))
 
         if len(digits) > 2:
-            hundreds_glyph = NUMBER_GLYPHS[digits.pop(0)]
             self.draw_glyph(
                 self.number_display_positions[2],
                 self.number_display_y,
-                NO_GLYPH, hundreds_glyph, None
+                NO_GLYPH,
+                NUMBER_GLYPHS[digits.pop(0)]
+                None
             )
 
         if len(digits) > 1:
-            tens_glyph = NUMBER_GLYPHS[digits.pop(0)]
             self.draw_glyph(
                 self.number_display_positions[1],
                 self.number_display_y,
-                NO_GLYPH, tens_glyph, None
+                NO_GLYPH,
+                NUMBER_GLYPHS[digits.pop(0)],
+                None
             )
 
-        ones_glyph = NUMBER_GLYPHS[digits.pop(0)]
         self.draw_glyph(
             self.number_display_positions[0],
             self.number_display_y,
-            NO_GLYPH, ones_glyph, None
+            NO_GLYPH,
+            NUMBER_GLYPHS[digits.pop(0)],
+            None
         )
 
         self.hundreds_glyph = NO_GLYPH
