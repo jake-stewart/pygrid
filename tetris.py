@@ -31,7 +31,14 @@ class TetrisGrid(PyGrid):
                  magenta, green, blue, red, orange, cell_size=20, fps=60,
                  board_width=10, board_height=20, difficulty_rate=1,
                  left_padding=1, right_padding=1, top_padding=1, bottom_padding=1,
-                 min_hold_time=3, ticks_per_drop=15, tick_speed=0.05):
+                 min_hold_time=3, ticks_per_drop=15, tick_speed=0.05, animate=True,
+                 fancy_drop=False):
+
+        self.red = red
+        self.animate = animate
+        self.fancy_drop = fancy_drop
+
+        self.dropping = False
 
         self.cell_color = cell_color
         self.score = 0
@@ -122,9 +129,9 @@ class TetrisGrid(PyGrid):
     def get_random_tetro(self):
         return random.randint(0, len(TETROS) - 1)
 
-    def new_tetro(self, animate=True):
+    def new_tetro(self):
         self.current_tetro = self.next_tetro
-        self.generate_next_tetro(animate)
+        self.generate_next_tetro()
         self.can_store = True
 
         self.x = self.board_width // 2 - 1
@@ -132,10 +139,10 @@ class TetrisGrid(PyGrid):
         self.rotation = 0
 
         self.find_preview()
-        self.draw_preview(animate=animate)
+        self.draw_preview(animate=self.animate)
         self.draw_tetro()
 
-    def draw_preview(self, animate=False):
+    def draw_preview(self, animate):
         for x, y in TETROS[self.current_tetro][self.rotation]:
             if self.preview_y + y < 0:
                 continue
@@ -171,7 +178,7 @@ class TetrisGrid(PyGrid):
             self.difficulty += 1
             self.set_difficulty()
             print(self.ticks_per_drop)
-            self.draw_score()
+            self.draw_score(self.cell_color)
             self.collapse_rows(full_rows)
 
         self.new_tetro()
@@ -187,37 +194,38 @@ class TetrisGrid(PyGrid):
             self.level_cap += self.difficulty_rate
             self.ticks_per_drop -= 1
 
-    def erase_next_tetro(self, animate=True):
+    def erase_next_tetro(self):
         preview, is_odd = PREVIEWS[self.next_tetro]
         for x, y in preview:
             self.erase_cell(
                 self.next_tetro_display_x + x,
                 self.next_tetro_display_y + y,
-                animate=animate
+                animate=self.animate
             )
 
-    def convert_odd_preview(self, x, y, animate=True):
+    def convert_odd_preview(self, x, y):
         for row in range(1, 5):
-            self.erase_cell(x, y + row, animate=animate)
+            self.erase_cell(x, y + row, animate=self.animate)
+
         for row in range(6):
             self.draw_cell(
                 x - 1, y + row,
                 self.cell_color,
-                animate=animate
+                animate=self.animate
             )
 
-    def convert_even_preview(self, x, y, animate=True):
+    def convert_even_preview(self, x, y):
         for row in range(6):
-            self.erase_cell(x - 1, y + row, animate=animate)
+            self.erase_cell(x - 1, y + row, animate=self.animate)
 
         for row in range(1, 5):
             self.draw_cell(
                 x, y + row,
                 self.cell_color,
-                animate=animate
+                animate=self.animate
             )
 
-    def erase_stored_tetro(self, animate=True):
+    def erase_stored_tetro(self):
         if self.stored_tetro is None:
             return
         preview, is_odd = PREVIEWS[self.stored_tetro]
@@ -225,23 +233,21 @@ class TetrisGrid(PyGrid):
             self.erase_cell(
                 self.stored_tetro_display_x + x,
                 self.stored_tetro_display_y + y,
-                animate=animate
+                animate=self.animate
             )
 
-    def draw_stored_tetro(self, animate=True):
+    def draw_stored_tetro(self):
         preview, is_odd = PREVIEWS[self.stored_tetro]
         if is_odd != self.stored_preview_odd:
             if is_odd:
                 self.convert_odd_preview(
                     self.stored_tetro_display_x,
-                    self.stored_tetro_display_y,
-                    animate=animate
+                    self.stored_tetro_display_y
                 )
             else:
                 self.convert_even_preview(
                     self.stored_tetro_display_x,
-                    self.stored_tetro_display_y,
-                    animate=animate
+                    self.stored_tetro_display_y
                 )
 
         self.stored_preview_odd = is_odd
@@ -251,23 +257,21 @@ class TetrisGrid(PyGrid):
                 self.stored_tetro_display_x + x,
                 self.stored_tetro_display_y + y,
                 self.colors[self.stored_tetro],
-                animate=animate
+                animate=self.animate
             )
 
-    def draw_next_tetro(self, animate=True):
+    def draw_next_tetro(self):
         preview, is_odd = PREVIEWS[self.next_tetro]
         if is_odd != self.next_preview_odd:
             if is_odd:
                 self.convert_odd_preview(
                     self.next_tetro_display_x,
-                    self.next_tetro_display_y,
-                    animate=animate
+                    self.next_tetro_display_y
                 )
             else:
                 self.convert_even_preview(
                     self.next_tetro_display_x,
-                    self.next_tetro_display_y,
-                    animate=animate
+                    self.next_tetro_display_y
                 )
 
         self.next_preview_odd = is_odd
@@ -277,7 +281,7 @@ class TetrisGrid(PyGrid):
                 self.next_tetro_display_x + x,
                 self.next_tetro_display_y + y,
                 self.colors[self.next_tetro],
-                animate=animate
+                animate=self.animate
             )
 
     def draw_tetro(self):
@@ -329,12 +333,12 @@ class TetrisGrid(PyGrid):
         if self.collision(self.x, self.y, self.current_tetro, new_rotation):
             return
 
-        self.erase_preview()
-        self.erase_tetro()
+        self.erase_preview(animate=False)
+        self.erase_tetro(animate=False)
 
         self.rotation = new_rotation
         self.find_preview()
-        self.draw_preview()
+        self.draw_preview(animate=False)
         self.draw_tetro()
 
     def move(self, direction):
@@ -351,11 +355,11 @@ class TetrisGrid(PyGrid):
         if collision:
             return
 
-        self.erase_tetro()
-        self.erase_preview()
+        self.erase_tetro(animate=False)
+        self.erase_preview(animate=False)
         self.x += direction
         self.find_preview()
-        self.draw_preview()
+        self.draw_preview(animate=False)
         self.draw_tetro()
 
     def fall(self):
@@ -363,6 +367,10 @@ class TetrisGrid(PyGrid):
             # game over
             if self.y <= 0:
                 self.game_state = DEAD
+                self.ones_glyph = NO_GLYPH
+                self.tens_glyph = NO_GLYPH
+                self.hundreds_glyph = NO_GLYPH
+                self.draw_screen(self.red)
                 self.stop_timer()
                 return
 
@@ -370,7 +378,8 @@ class TetrisGrid(PyGrid):
             return True
 
         else:
-            self.erase_tetro()
+            animate = self.fancy_drop and self.game_state == DROPPING
+            self.erase_tetro(animate=animate)
             self.y += 1
             self.draw_tetro()
             return False
@@ -421,42 +430,42 @@ class TetrisGrid(PyGrid):
         self.row_totals.append(0)
 
     def on_start(self):
-        self.draw_screen()
-        self.new_tetro(animate=False)
+        self.draw_screen(self.cell_color)
+        self.new_tetro()
         self.start_timer()
 
-    def draw_outline(self, x, y, w, h):
+    def draw_outline(self, x, y, w, h, color):
         for col in range(w):
-            self.draw_cell(x + col, y, self.cell_color)
-            self.draw_cell(x + col, y + h - 1, self.cell_color)
+            self.draw_cell(x + col, y, color, animate=self.animate)
+            self.draw_cell(x + col, y + h - 1, color, animate=self.animate)
 
         for row in range(1, h - 1):
-            self.draw_cell(x, y + row, self.cell_color)
-            self.draw_cell(x + w - 1, y + row, self.cell_color)
+            self.draw_cell(x, y + row, color, animate=self.animate)
+            self.draw_cell(x + w - 1, y + row, color, animate=self.animate)
 
-    def draw_glyph(self, x1, y1, glyph, old_glyph, animate=True):
+    def draw_glyph(self, x1, y1, glyph, old_glyph, color, efficient=True):
         if glyph is old_glyph:
             return
 
         for y2, row in enumerate(glyph):
             for x2, pixel in enumerate(row):
-                if pixel != old_glyph[y2][x2]:
+                if not efficient or pixel != old_glyph[y2][x2]:
                     if pixel:
                         self.draw_cell(
                             x1 + x2,
                             y1 + y2,
-                            self.cell_color,
-                            animate=animate
+                            color,
+                            animate=self.animate
                         )
                     else:
                         self.erase_cell(
                             x1 + x2,
                             y1 + y2,
-                            animate=animate
+                            animate=self.animate
                         )
 
 
-    def draw_score(self):
+    def draw_score(self, color, efficient=True):
         digits = list(map(int, str(self.score)[-3:]))
 
         if len(digits) > 2:
@@ -466,7 +475,8 @@ class TetrisGrid(PyGrid):
                 self.number_display_positions[2],
                 self.number_display_y,
                 self.hundreds_glyph,
-                old_glyph
+                old_glyph, color,
+                efficient=efficient
             )
 
         if len(digits) > 1:
@@ -476,7 +486,8 @@ class TetrisGrid(PyGrid):
                 self.number_display_positions[1],
                 self.number_display_y,
                 self.tens_glyph,
-                old_glyph
+                old_glyph, color,
+                efficient=efficient
             )
 
         old_glyph = self.ones_glyph
@@ -485,31 +496,35 @@ class TetrisGrid(PyGrid):
             self.number_display_positions[0],
             self.number_display_y,
             self.ones_glyph,
-            old_glyph
+            old_glyph, color,
+            efficient=efficient
         )
         
-    def draw_screen(self):
+    def draw_screen(self, color):
         # next tetro
         self.draw_outline(
-            self.next_tetro_display_x,
+            self.next_tetro_display_x - self.next_preview_odd,
             self.next_tetro_display_y,
-            6, 6
+            6 + self.next_preview_odd, 6,
+            color
         )
 
         # stored tetro
         self.draw_outline(
-            self.stored_tetro_display_x,
+            self.stored_tetro_display_x - self.stored_preview_odd,
             self.stored_tetro_display_y,
-            6, 6
+            6 + self.stored_preview_odd, 6,
+            color
         )
 
         # tetro game screen
         self.draw_outline(
             self.left_padding, self.top_padding,
-            self.board_width + 2, self.board_height + 2
+            self.board_width + 2, self.board_height + 2,
+            color
         )
 
-        self.draw_score()
+        self.draw_score(color, efficient=False)
 
     def on_timer(self, n_ticks):
         for n in range(n_ticks):
@@ -532,7 +547,51 @@ class TetrisGrid(PyGrid):
 
         self.timer_tick()
 
+    def reset(self):
+        self.erase_tetro(animate=self.animate)
+        self.erase_preview(animate=self.animate)
+        for row in reversed(range(self.board_height)):
+            if not self.row_totals[row]:
+                break
+            self.rows[row] = self.empty_row.copy()
+            self.draw_row(row)
+            self.row_totals[row] = 0
+
+        self.game_state = PLAYING
+
+        self.ticks_per_drop = self.default_ticks_per_drop
+        self.level_cap = self.difficulty_rate
+        self.difficulty = 0
+
+        self.erase_next_tetro()
+        self.next_tetro = self.get_random_tetro()
+
+        self.erase_stored_tetro()
+        if self.stored_preview_odd:
+            self.convert_even_preview(
+                self.stored_tetro_display_x,
+                self.stored_tetro_display_y
+            )
+            self.stored_preview_odd = False
+        self.stored_tetro = None
+
+        self.x_vel = 0
+        self.y_vel = 0
+
+        self.ones_glyph = NO_GLYPH
+        self.tens_glyph = NO_GLYPH
+        self.hundreds_glyph = NO_GLYPH
+        self.score = 0
+        self.draw_screen(self.cell_color)
+
+        self.new_tetro()
+        self.set_timer(self.fall_tick_speed)
+        self.start_timer()
+
     def on_key_up(self, key):
+        if self.game_state == DEAD:
+            return
+
         if key in LEFT_KEYS:
             if self.x_vel == -1:
                 self.x_vel = 0
@@ -545,8 +604,13 @@ class TetrisGrid(PyGrid):
             self.y_vel = 0
 
     def on_key_down(self, key):
+        if self.game_state == DEAD:
+            self.reset()
+            return
+
         if key in ROTATE_KEYS:
-            self.rotate()
+            if self.game_state == PLAYING:
+                self.rotate()
 
         elif key in DOWN_KEYS:
             self.hold_time = 0
@@ -578,10 +642,10 @@ class TetrisGrid(PyGrid):
             if self.game_state == PLAYING:
                 self.store_tetro()
 
-    def generate_next_tetro(self, animate=True):
-        self.erase_next_tetro(animate)
+    def generate_next_tetro(self):
+        self.erase_next_tetro()
         self.next_tetro = self.get_random_tetro()
-        self.draw_next_tetro(animate)
+        self.draw_next_tetro()
 
     def store_tetro(self):
         if not self.can_store:
@@ -605,8 +669,8 @@ class TetrisGrid(PyGrid):
         self.erase_stored_tetro()
         self.stored_tetro = self.current_tetro
         self.draw_stored_tetro()
-        self.erase_tetro(animate=True)
-        self.erase_preview(animate=True)
+        self.erase_tetro(animate=self.animate)
+        self.erase_preview(animate=self.animate)
 
         self.current_tetro = new_tetro
         self.rotation = 0
@@ -614,7 +678,7 @@ class TetrisGrid(PyGrid):
         self.y = -TETRO_HEIGHTS[self.current_tetro]
 
         self.find_preview()
-        self.draw_preview(animate=True)
+        self.draw_preview(animate=self.animate)
         self.draw_tetro()
 
         self.can_store = False
