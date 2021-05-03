@@ -177,7 +177,6 @@ class TetrisGrid(PyGrid):
             self.score += len(full_rows)
             self.difficulty += 1
             self.set_difficulty()
-            print(self.ticks_per_drop)
             self.draw_score(self.cell_color)
             self.collapse_rows(full_rows)
 
