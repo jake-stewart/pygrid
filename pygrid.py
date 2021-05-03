@@ -1,10 +1,15 @@
 import math
 import random
 import sys
-import pygame
 from collections import defaultdict
 from utils import color_mix
 from keycodes import MOUSE_SCROLL_UP, MOUSE_SCROLL_DOWN, MIDDLE_MOUSE
+
+# ignore pygame startup message
+import contextlib
+with contextlib.redirect_stdout(None):
+    import pygame
+
 
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
