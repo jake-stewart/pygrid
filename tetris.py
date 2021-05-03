@@ -41,7 +41,7 @@ class TetrisGrid(PyGrid):
         self.dropping = False
 
         self.cell_color = cell_color
-        self.score = 120
+        self.score = 0
         self.difficulty = 0
         self.level_cap = difficulty_rate
         self.difficulty_rate = difficulty_rate
@@ -473,7 +473,7 @@ class TetrisGrid(PyGrid):
                 self.number_display_positions[2],
                 self.number_display_y,
                 NO_GLYPH,
-                NUMBER_GLYPHS[digits.pop(0)]
+                NUMBER_GLYPHS[digits.pop(0)],
                 None
             )
 
