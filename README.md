@@ -39,8 +39,9 @@ Visualization of three pathfinding algorithms. `pathfinding.py`
 * Zoom with middle mouse and pan the screen with the scroll wheel.
 * The speed of the simulation can be changed with keys 1-9.
 * The algorithm can be changed with keys a, b, or c, where the algorithms are breadth-first, best-first and A* respectively.
-* The simulation can be paused and resumed with space, or cleared entirely with escape.
-* The grid can be cleared with delete.
+* The simulation can be paused and resumed with space.
+* The simulation can be cancelled and cleared with escape.
+* The entire grid can be cleared with delete.
 
 <br />
 
