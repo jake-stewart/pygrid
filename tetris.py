@@ -32,7 +32,7 @@ class TetrisGrid(PyGrid):
                  cell_size=20, fps=60, board_width=10, board_height=20,
                  difficulty_rate=1, left_padding=1, right_padding=1, top_padding=1,
                  bottom_padding=1, min_hold_time=5, ticks_per_drop=15, tick_speed=0.05,
-                 animate=True, fancy_drop=False):
+                 animate=True, fancy_drop=True):
 
         self.red = red
         self.animate = animate
