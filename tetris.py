@@ -28,11 +28,11 @@ class TetrisGrid(PyGrid):
     ui_height = 19
 
     def __init__(self, background_color, cell_color, cyan, yellow,
-                 magenta, green, blue, red, orange, cell_size=20, fps=60,
-                 board_width=10, board_height=20, difficulty_rate=1,
-                 left_padding=1, right_padding=1, top_padding=1, bottom_padding=1,
-                 min_hold_time=5, ticks_per_drop=15, tick_speed=0.05, animate=True,
-                 fancy_drop=False):
+                 magenta, green, blue, red, orange, grid_color, grid_thickness,
+                 cell_size=20, fps=60, board_width=10, board_height=20,
+                 difficulty_rate=1, left_padding=1, right_padding=1, top_padding=1,
+                 bottom_padding=1, min_hold_time=5, ticks_per_drop=15, tick_speed=0.05,
+                 animate=True, fancy_drop=False):
 
         self.red = red
         self.animate = animate
@@ -112,12 +112,13 @@ class TetrisGrid(PyGrid):
             n_columns=screen_width,
             n_rows=screen_height,
             cell_size=cell_size,
+            grid_color=grid_color,
+            grid_thickness=grid_thickness,
             allowed_resize=False,
             allowed_pan=False,
             allowed_zoom=False,
             background_color=background_color,
             animation_duration=0.1,
-            grid_thickness=0,
             fps=fps
         )
 
@@ -731,6 +732,8 @@ if __name__ == "__main__":
     grid = TetrisGrid(
         background_color = config["background_color"],
         cell_color       = cell_color,
+        grid_color       = config["grid_color"],
+        grid_thickness   = config["grid_thickness"],
         cyan             = config["cyan"],
         yellow           = config["blue"],
         magenta          = config["magenta"],
@@ -740,4 +743,5 @@ if __name__ == "__main__":
         orange           = orange,
         fps              = config["fps"]
     )
+
     grid.start()
