@@ -31,7 +31,7 @@ class TetrisGrid(PyGrid):
                  magenta, green, blue, red, orange, cell_size=20, fps=60,
                  board_width=10, board_height=20, difficulty_rate=1,
                  left_padding=1, right_padding=1, top_padding=1, bottom_padding=1,
-                 min_hold_time=3, ticks_per_drop=15, tick_speed=0.05, animate=True,
+                 min_hold_time=5, ticks_per_drop=15, tick_speed=0.05, animate=True,
                  fancy_drop=False):
 
         self.red = red
@@ -41,7 +41,7 @@ class TetrisGrid(PyGrid):
         self.dropping = False
 
         self.cell_color = cell_color
-        self.score = 0
+        self.score = 120
         self.difficulty = 0
         self.level_cap = difficulty_rate
         self.difficulty_rate = difficulty_rate
@@ -369,6 +369,7 @@ class TetrisGrid(PyGrid):
                 self.ones_glyph = NO_GLYPH
                 self.tens_glyph = NO_GLYPH
                 self.hundreds_glyph = NO_GLYPH
+                self.erase_score()
                 self.draw_screen(self.red)
                 self.stop_timer()
                 return
@@ -442,13 +443,13 @@ class TetrisGrid(PyGrid):
             self.draw_cell(x, y + row, color, animate=self.animate)
             self.draw_cell(x + w - 1, y + row, color, animate=self.animate)
 
-    def draw_glyph(self, x1, y1, glyph, old_glyph, color, efficient=True):
+    def draw_glyph(self, x1, y1, glyph, old_glyph, color):
         if glyph is old_glyph:
             return
 
         for y2, row in enumerate(glyph):
             for x2, pixel in enumerate(row):
-                if not efficient or pixel != old_glyph[y2][x2]:
+                if pixel != old_glyph[y2][x2]:
                     if pixel:
                         self.draw_cell(
                             x1 + x2,
@@ -464,7 +465,37 @@ class TetrisGrid(PyGrid):
                         )
 
 
-    def draw_score(self, color, efficient=True):
+    def erase_score(self):
+        digits = list(map(int, str(self.score)[-3:]))
+
+        if len(digits) > 2:
+            hundreds_glyph = NUMBER_GLYPHS[digits.pop(0)]
+            self.draw_glyph(
+                self.number_display_positions[2],
+                self.number_display_y,
+                NO_GLYPH, hundreds_glyph, None
+            )
+
+        if len(digits) > 1:
+            tens_glyph = NUMBER_GLYPHS[digits.pop(0)]
+            self.draw_glyph(
+                self.number_display_positions[1],
+                self.number_display_y,
+                NO_GLYPH, tens_glyph, None
+            )
+
+        ones_glyph = NUMBER_GLYPHS[digits.pop(0)]
+        self.draw_glyph(
+            self.number_display_positions[0],
+            self.number_display_y,
+            NO_GLYPH, ones_glyph, None
+        )
+
+        self.hundreds_glyph = NO_GLYPH
+        self.tens_glyph = NO_GLYPH
+        self.ones_glyph = NO_GLYPH
+
+    def draw_score(self, color):
         digits = list(map(int, str(self.score)[-3:]))
 
         if len(digits) > 2:
@@ -474,8 +505,7 @@ class TetrisGrid(PyGrid):
                 self.number_display_positions[2],
                 self.number_display_y,
                 self.hundreds_glyph,
-                old_glyph, color,
-                efficient=efficient
+                old_glyph, color
             )
 
         if len(digits) > 1:
@@ -485,8 +515,7 @@ class TetrisGrid(PyGrid):
                 self.number_display_positions[1],
                 self.number_display_y,
                 self.tens_glyph,
-                old_glyph, color,
-                efficient=efficient
+                old_glyph, color
             )
 
         old_glyph = self.ones_glyph
@@ -495,8 +524,7 @@ class TetrisGrid(PyGrid):
             self.number_display_positions[0],
             self.number_display_y,
             self.ones_glyph,
-            old_glyph, color,
-            efficient=efficient
+            old_glyph, color
         )
         
     def draw_screen(self, color):
@@ -523,7 +551,7 @@ class TetrisGrid(PyGrid):
             color
         )
 
-        self.draw_score(color, efficient=False)
+        self.draw_score(color)
 
     def on_timer(self, n_ticks):
         for n in range(n_ticks):
@@ -572,14 +600,10 @@ class TetrisGrid(PyGrid):
                 self.stored_tetro_display_y
             )
             self.stored_preview_odd = False
+
         self.stored_tetro = None
 
-        self.x_vel = 0
-        self.y_vel = 0
-
-        self.ones_glyph = NO_GLYPH
-        self.tens_glyph = NO_GLYPH
-        self.hundreds_glyph = NO_GLYPH
+        self.erase_score()
         self.score = 0
         self.draw_screen(self.cell_color)
 
