@@ -1,5 +1,5 @@
 # PyGrid
-An infinite, zoomable, pannable, resizable, multi-threaded grid written in python using pygame.
+An infinite, zoomable, pannable, resizable, multi-threaded grid written in python using pygame. Created as a resume project.
 
 `pygrid.py` contains a PyGrid class that provides an interface for developing grid-orientated programs. Four programs have been created as demonstration: Conway's Game of Life, a pathfinding visualisation, Tetris, and Snake.
 
