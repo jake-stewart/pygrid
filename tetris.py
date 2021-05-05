@@ -60,7 +60,7 @@ class TetrisGrid(PyGrid):
         self.current_tetro = None
         self.next_tetro = self.get_random_tetro()
 
-        self.colors = [cyan, blue, orange, yellow, magenta, green, magenta, red]
+        self.colors = [cyan, blue, orange, yellow, green, magenta, red]
         self.preview_colors = [
             color_mix(background_color, color, 0.15) for color in self.colors
         ]
