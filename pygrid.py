@@ -5,11 +5,10 @@ from collections import defaultdict
 from utils import color_mix
 from keycodes import MOUSE_SCROLL_UP, MOUSE_SCROLL_DOWN, MIDDLE_MOUSE
 
-# ignore pygame startup message
+# ignore startup message
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
-
 
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
@@ -198,11 +197,7 @@ class PyGrid:
         self._timer_active = False
 
     def timer_tick(self):
-        self.process_cell_queue()
         self._timer_ticked = True
-
-    def process_cell_queue(self):
-        self._process_cell_queue = True
 
     # EVENTS
     # these methods will be used when inheriting the class
@@ -251,6 +246,28 @@ class PyGrid:
             return self._background_color
         return None
     
+    def _increment_timer(self, delta):
+        self._timer_progress += delta
+        if self._timer_progress >= self._timer_duration:
+            if self._timer_ticked:
+                self.process_thread_queue()
+
+                n_ticks = int(self._timer_progress / self._timer_duration)
+                self._timer_ticked = False
+                self.on_timer(n_ticks)
+                self._timer_progress %= self._timer_duration
+
+
+    def process_thread_queue(self):
+        if self._thread_draw_queue:
+            self._screen_changed = True
+            for (cell_x, cell_y), color in self._thread_draw_queue.items():
+                if not color:
+                    self.erase_cell(cell_x, cell_y)
+                else:
+                    self.draw_cell(cell_x, cell_y, color)
+            self.clear_thread_queue()
+    
     def start(self):
         pygame.init()
 
@@ -277,29 +294,14 @@ class PyGrid:
 
             self._handle_mouse_motion()
 
-            if self._process_cell_queue:
-                self._process_cell_queue = False
-                self._screen_changed = True
-                for (cell_x, cell_y), color in self._thread_draw_queue.items():
-                    if not color:
-                        self.erase_cell(cell_x, cell_y)
-                    else:
-                        self.draw_cell(cell_x, cell_y, color)
-                self.clear_thread_queue()
+            if self._timer_active:
+                self._increment_timer(delta)
 
             if self._screen_changed:
                 self._screen_changed = False
                 pygame.display.flip()
 
 
-            if self._timer_active:
-                self._timer_progress += delta
-                if self._timer_progress >= self._timer_duration:
-                    if self._timer_ticked:
-                        n_ticks = int(self._timer_progress / self._timer_duration)
-                        self._timer_ticked = False
-                        self.on_timer(n_ticks)
-                        self._timer_progress %= self._timer_duration
 
             delta = self._clock.tick(self._fps)
 
@@ -365,9 +367,7 @@ class PyGrid:
     def _start_animation(self, cell_x, cell_y, color, delete_after=False):
         original_color = self.get_cell(cell_x, cell_y)
         if original_color != color:
-            self._animated_cells[(cell_x, cell_y)] = [
-                original_color, color, 0, delete_after
-            ]
+            self._animated_cells[(cell_x, cell_y)] = [original_color, color, 0, delete_after]
 
     def draw_cell(self, cell_x, cell_y, color, animate=False):
         self._end_animation(cell_x, cell_y)
@@ -515,10 +515,10 @@ class PyGrid:
                 self._screen_changed = True
 
     def _calc_alt_offsets(self):
-        self._right_offset = self._cell_size \
-            - (self._width + self._left_offset) % self._cell_size
-        self._bottom_offset = self._cell_size \
-            - (self._height + self._top_offset) % self._cell_size
+        self._right_offset = self._cell_size - \
+            (self._width + self._left_offset) % self._cell_size
+        self._bottom_offset = self._cell_size - \
+            (self._height + self._top_offset) % self._cell_size
 
     def _calc_offsets(self):
         self._left_offset = math.floor((self._pos_x % 1) * self._cell_size)
@@ -731,8 +731,7 @@ class PyGrid:
         self._screen_changed = True
 
     def draw_columns_grids(self, column_start, column_span):
-        n = -self._left_offset + column_start * self._cell_size \
-            + self._cell_size - self._grid_thickness
+        n = -self._left_offset + column_start * self._cell_size + self._cell_size - self._grid_thickness
         for column in range(column_start, column_start + column_span):
             self._screen.blit(
                 self._grid_column,
