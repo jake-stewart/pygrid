@@ -149,9 +149,9 @@ class GameOfLifeGrid(DrawGrid):
             self.reset()
 
     def reset(self):
-        self.stop_timer()
         if self.thread:
             self.thread.join()
+        self.stop_timer()
         self.clear()
         self.change_list = []
         self.alive_cells = set()
