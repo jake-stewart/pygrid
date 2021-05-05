@@ -76,7 +76,6 @@ class PathfindingGrid(DrawGrid):
 
         if self.solving_state == SOLVING_PAUSED or \
                 self.solving_state == SOLVING_FINISHED:
-            self.stop_timer(process_thread_queue=False)
             self.solving_state = NOT_SOLVING
             self.clear_solve()
 
@@ -161,7 +160,7 @@ class PathfindingGrid(DrawGrid):
     def clear_solve(self):
         if self.thread:
             self.thread.join()
-        self.stop_timer(draw_thread_queue=False)
+        self.stop_timer(process_thread_queue=False)
         del self.explored_cells[self.start_cell]
         for cell in self.explored_cells:
             self.erase_cell(*cell)
