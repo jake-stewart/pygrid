@@ -18,7 +18,6 @@ class PyGrid:
                  animation_duration=0.1, pan_button=MIDDLE_MOUSE, fps=60,
                  allowed_zoom=True, allowed_pan=True, allowed_resize=True):
 
-        self._process_cell_queue = False
         self._thread_draw_queue = {}
 
         # grid demensions
@@ -135,7 +134,7 @@ class PyGrid:
         self._columns = defaultdict(lambda: defaultdict(dict))
         self._pos_x = 0
         self._pos_y = 0
-        self.clear_thread_queue()
+        self._clear_thread_queue()
         self._animated_cells = {}
         self._draw_screen()
 
@@ -160,7 +159,7 @@ class PyGrid:
 
         return False
 
-    def clear_thread_queue(self):
+    def _clear_thread_queue(self):
         self._thread_draw_queue = {}
 
     def thread_draw_cell(self, cell_x, cell_y, color):
@@ -189,12 +188,15 @@ class PyGrid:
         self._timer_duration = duration * 1000
 
     def start_timer(self):
+        self._clear_thread_queue()
         self._timer_active = True
         self._timer_ticked = True
         self._timer_progress = 0
 
-    def stop_timer(self):
+    def stop_timer(self, process_thread_queue=True):
         self._timer_active = False
+        if process_thread_queue:
+            self._process_thread_queue()
 
     def timer_tick(self):
         self._timer_ticked = True
@@ -250,7 +252,7 @@ class PyGrid:
         self._timer_progress += delta
         if self._timer_progress >= self._timer_duration:
             if self._timer_ticked:
-                self.process_thread_queue()
+                self._process_thread_queue()
 
                 n_ticks = int(self._timer_progress / self._timer_duration)
                 self._timer_ticked = False
@@ -258,7 +260,7 @@ class PyGrid:
                 self._timer_progress %= self._timer_duration
 
 
-    def process_thread_queue(self):
+    def _process_thread_queue(self):
         if self._thread_draw_queue:
             self._screen_changed = True
             for (cell_x, cell_y), color in self._thread_draw_queue.items():
@@ -266,7 +268,7 @@ class PyGrid:
                     self.erase_cell(cell_x, cell_y)
                 else:
                     self.draw_cell(cell_x, cell_y, color)
-            self.clear_thread_queue()
+            self._clear_thread_queue()
     
     def start(self):
         pygame.init()
