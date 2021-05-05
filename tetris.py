@@ -41,7 +41,7 @@ class TetrisGrid(PyGrid):
         self.dropping = False
 
         self.cell_color = cell_color
-        self.score = 0
+        self.score = 20
         self.difficulty = 0
         self.level_cap = difficulty_rate
         self.difficulty_rate = difficulty_rate
@@ -60,7 +60,7 @@ class TetrisGrid(PyGrid):
         self.current_tetro = None
         self.next_tetro = self.get_random_tetro()
 
-        self.colors = [cyan, yellow, magenta, green, blue, red, orange]
+        self.colors = [cyan, blue, orange, yellow, magenta, green, magenta, red]
         self.preview_colors = [
             color_mix(background_color, color, 0.15) for color in self.colors
         ]
@@ -735,7 +735,7 @@ if __name__ == "__main__":
         grid_color       = config["grid_color"],
         grid_thickness   = config["grid_thickness"],
         cyan             = config["cyan"],
-        yellow           = config["blue"],
+        yellow           = config["yellow"],
         magenta          = config["magenta"],
         green            = config["green"],
         blue             = config["blue"],
