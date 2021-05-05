@@ -731,13 +731,13 @@ class PyGrid:
         self._screen_changed = True
 
     def draw_columns_grids(self, column_start, column_span):
-        n = -self._left_offset + column_start * self._cell_size + self._cell_size - self._grid_thickness
+        x = -self._left_offset + column_start * self._cell_size + self._cell_size - self._grid_thickness
         for column in range(column_start, column_start + column_span):
             self._screen.blit(
                 self._grid_column,
-                (n, -self._top_offset)
+                (x, -self._top_offset)
             )
-            n += self._cell_size
+            x += self._cell_size
 
     def draw_partial_columns_grids(self, column_start, column_span,
                                    row_start, row_span):
@@ -749,31 +749,31 @@ class PyGrid:
                 - (self._cell_size - self._bottom_offset)
 
 
-        n = -self._left_offset + self._cell_size - self._grid_thickness
+        x = -self._left_offset + self._cell_size - self._grid_thickness
 
         for column in range(self._n_columns):
             if column_start <= column < column_start + column_span:
                 self._screen.blit(
                     self._grid_column,
-                    (n, -self._top_offset)
+                    (x, -self._top_offset)
                 )
             else:
                 self._screen.blit(
                     self._grid_column,
-                    (n, grid_offset)
+                    (x, grid_offset)
                 )
 
-            n += self._cell_size
+            x += self._cell_size
 
     def draw_rows_grids(self, row_start, row_span):
-        n = -self._top_offset + row_start * self._cell_size \
+        y = -self._top_offset + row_start * self._cell_size \
             + self._cell_size - self._grid_thickness
         for row in range(row_start, row_start + row_span):
             self._screen.blit(
                 self._grid_row,
-                (-self._left_offset, n)
+                (-self._left_offset, y)
             )
-            n += self._cell_size
+            y += self._cell_size
 
     def draw_partial_rows_grids(self, row_start, row_span,
                                 column_start, column_span):
@@ -785,21 +785,21 @@ class PyGrid:
                 - (self._cell_size - self._right_offset)
 
 
-        n = -self._top_offset + self._cell_size - self._grid_thickness
+        y = -self._top_offset + self._cell_size - self._grid_thickness
 
         for row in range(self._n_rows):
             if row_start <= row < row_start + row_span:
                 self._screen.blit(
                     self._grid_row,
-                    (-self._left_offset, n)
+                    (-self._left_offset, y)
                 )
             else:
                 self._screen.blit(
                     self._grid_row,
-                    (grid_offset, n)
+                    (grid_offset, y)
                 )
 
-            n += self._cell_size
+            y += self._cell_size
 
 
     def _zoom(self, x, y, amount):
@@ -985,7 +985,7 @@ class PyGrid:
 
         # horizontal cell-sized grid line used for individual cell placement
         self._grid_cell_y = pygame.Surface(
-            (self._cell_size, self._grid_thickness)
+            (self._cell_size - self._grid_thickness, self._grid_thickness)
         )
         self._grid_cell_y.fill(self._grid_color)
         self._grid_cell_y.set_alpha(self._grid_alpha)
@@ -1014,7 +1014,7 @@ class PyGrid:
         # after every column, a dot is drawn in the color key (magenta)
         # this dot will be transparent when the grid line is blitted
         # this avoids rows and columns grid lines overlapping
-        for column in range(n_columns):
+        for column in range(n_columns + 2):
             pygame.draw.rect(
                 self._grid_row,
                 self._color_key,
