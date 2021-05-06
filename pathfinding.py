@@ -170,7 +170,7 @@ class PathfindingGrid(DrawGrid):
     def reset(self):
         if self.thread:
             self.thread.join()
-        self.stop_timer()
+        self.stop_timer(process_thread_queue=False)
         self.start_cell = None
         self.end_cell = None
         self.queue = []
