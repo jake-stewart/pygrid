@@ -1,5 +1,4 @@
 from draw_grid import DrawGrid
-from threading import Thread
 from keycodes import *
 
 
@@ -45,7 +44,6 @@ class PathfindingGrid(DrawGrid):
         self.cell_color = cell_color
         self.queue = []
         self.explored_cells = {}
-        self.thread = None
 
         self.algorithm = default_algorithm
 
@@ -121,10 +119,8 @@ class PathfindingGrid(DrawGrid):
         if key == KEY_SPACE:  # space
             if self.solving_state == SOLVING_PAUSED:
                 self.solving_state = SOLVING_ACTIVE
-                self.start_timer()
+                self.start_timer(multithreaded=True)
             elif self.solving_state == SOLVING_ACTIVE:
-                if self.thread:
-                    self.thread.join()
                 self.stop_timer()
                 self.solving_state = SOLVING_PAUSED
             else:
@@ -158,9 +154,7 @@ class PathfindingGrid(DrawGrid):
             self.set_timer(self.iteration_delay)
 
     def clear_solve(self):
-        if self.thread:
-            self.thread.join()
-        self.stop_timer(process_thread_queue=False)
+        self.stop_timer()
         del self.explored_cells[self.start_cell]
         for cell in self.explored_cells:
             self.erase_cell(*cell)
@@ -168,9 +162,7 @@ class PathfindingGrid(DrawGrid):
         self.explored_cells = {}
 
     def reset(self):
-        if self.thread:
-            self.thread.join()
-        self.stop_timer(process_thread_queue=False)
+        self.stop_timer()
         self.start_cell = None
         self.end_cell = None
         self.queue = []
@@ -187,21 +179,17 @@ class PathfindingGrid(DrawGrid):
 
         if self.solving_state == SOLVING_FINISHED:
             self.clear_solve()
+
         self.found_end_cell = False
         self.trace_cell = self.end_cell
         self.solving_state = SOLVING_ACTIVE
-        self.start_timer()
         self.queue = [(self.start_cell, 0)]
         self.explored_cells = {self.start_cell: 1}
+        self.start_timer(multithreaded=True)
 
     def on_timer(self, n_ticks):
-        self.thread = Thread(target=self.thread_func)
-        self.thread.start()
-
-    def thread_func(self):
         for i in range(self.iterations_per_tick):
             self.do_iteration()
-        self.timer_tick()
 
     def do_iteration(self):
         if self.found_end_cell:
@@ -245,7 +233,7 @@ class PathfindingGrid(DrawGrid):
             self.stop_timer()
             self.solving_state = SOLVING_FINISHED
         else:
-            self.thread_draw_cell(*self.chosen_cell, self.trace_color)
+            self.draw_cell(*self.chosen_cell, self.trace_color)
             self.trace_cell = self.chosen_cell
 
     def search_neighbour(self, cell):
@@ -284,7 +272,7 @@ class PathfindingGrid(DrawGrid):
 
             # save the path length so we can use it for backtracking later
             self.explored_cells[cell] = self.counter
-            self.thread_draw_cell(*cell, self.scan_color)
+            self.draw_cell(*cell, self.scan_color)
 
     def expand_search(self):
         if not self.queue:
@@ -295,7 +283,7 @@ class PathfindingGrid(DrawGrid):
         (cell_x, cell_y), heuristic = self.queue.pop(0)
 
         if (cell_x, cell_y) != self.start_cell:
-            self.thread_draw_cell(cell_x, cell_y, self.scanned_color)
+            self.draw_cell(cell_x, cell_y, self.scanned_color)
 
         self.counter = self.explored_cells[(cell_x, cell_y)] + 1
 
