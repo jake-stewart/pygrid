@@ -576,8 +576,6 @@ class TetrisGrid(PyGrid):
                     self.set_timer(self.fall_tick_speed)
                     self.game_state = PLAYING
 
-        self.timer_tick()
-
     def reset(self):
         self.erase_tetro(animate=self.animate)
         self.erase_preview(animate=self.animate)
