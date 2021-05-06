@@ -148,7 +148,6 @@ class SnakeGrid(PyGrid):
         else:
             self.set_timer(self.delay)
             self.game_state = PLAYING
-        self.timer_tick()
 
     def reset(self):
         if self.game_state == DEAD:
