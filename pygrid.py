@@ -4,11 +4,13 @@ import sys
 from collections import defaultdict
 from utils import color_mix
 from keycodes import MOUSE_SCROLL_UP, MOUSE_SCROLL_DOWN, MIDDLE_MOUSE
+import threading
 
 # ignore startup message
 import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
+
 
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
@@ -19,6 +21,9 @@ class PyGrid:
                  allowed_zoom=True, allowed_pan=True, allowed_resize=True):
 
         self._thread_draw_queue = {}
+
+        self._main_thread = threading.currentThread()
+        self._stopped_timer_in_thread = False
 
         # grid demensions
         self._n_rows = n_rows
@@ -66,7 +71,6 @@ class PyGrid:
         # only update screen if changes have occurred
         self._screen_changed = True
 
-        self._timer_ticked = False
         self._timer_active = False
         self._timer_progress = 0
         self._timer_duration = 1000  # milliseconds
@@ -124,6 +128,16 @@ class PyGrid:
         self._calc_offsets()
         self._calc_alt_offsets()
 
+        self.draw_cell = self._draw_cell_threadless
+        self.erase_cell = self._erase_cell_threadless
+
+        self._threads_active = False
+        self._user_thread_busy = False
+        self._thread_event = threading.Event()
+
+        self._screen_thread_busy = False
+        self._screen_thread_event = threading.Event()
+
     def _draw_screen(self):
         self._draw_rows_cells(0, self._n_rows)
         self._draw_grid()
@@ -134,72 +148,25 @@ class PyGrid:
         self._columns = defaultdict(lambda: defaultdict(dict))
         self._pos_x = 0
         self._pos_y = 0
-        self._clear_thread_queue()
+        # self._clear_thread_queue()
         self._animated_cells = {}
         self._draw_screen()
 
     def _calc_render_zone(self):
-        self._render_bound_left = -self._width / 2
-        self._render_bound_right = self._width * 1.5
-        self._render_bound_top = -self._height / 2
-        self._render_bound_bottom = self._height * 1.5
+        self._render_bound_left = -self._width * 0.2
+        self._render_bound_right = self._width * 1.2
+        self._render_bound_top = -self._height * 0.2
+        self._render_bound_bottom = self._height * 1.2
 
         # self._render_bound_left = 0
         # self._render_bound_right = self._width
         # self._render_bound_top = 0
         # self._render_bound_bottom = self._height
 
-    def _in_render_zone(self, cell_x, cell_y):
-        x = (cell_x - self._pos_x) * self._cell_size
-        if self._render_bound_left < x < self._render_bound_right:
-
-            y = (cell_y - self._pos_y) * self._cell_size
-            if self._render_bound_top < y < self._render_bound_bottom:
-                return True
-
-        return False
-
-    def _clear_thread_queue(self):
-        self._thread_draw_queue = {}
-
-    def thread_draw_cell(self, cell_x, cell_y, color):
-        if self._in_render_zone(cell_x, cell_y):
-            self._thread_draw_queue[cell_x, cell_y] = color
-        else:
-            if (cell_x, cell_y) in self._thread_draw_queue:
-                del self._thread_draw_queue[(cell_x, cell_y)]
-            self._add_cell(cell_x, cell_y, color)
-
-    def thread_erase_cell(self, cell_x, cell_y):
-        if self._in_render_zone(cell_x, cell_y):
-            self._thread_draw_queue[(cell_x, cell_y)] = None
-        else:
-            if (cell_x, cell_y) in self._thread_draw_queue:
-                del self._thread_draw_queue[(cell_x, cell_y)]
-            self._delete_cell(cell_x, cell_y)
-
     def set_grid_color(self, color):
         if color == self._color_key:
             raise ValueError(f"{str(self.color_key)} is reserved for the color key")
         self._grid_color = color
-
-    def set_timer(self, duration):
-        # duration is in seconds, multiply by 1000 for milliseconds
-        self._timer_duration = duration * 1000
-
-    def start_timer(self):
-        self._clear_thread_queue()
-        self._timer_active = True
-        self._timer_ticked = True
-        self._timer_progress = 0
-
-    def stop_timer(self, process_thread_queue=True):
-        self._timer_active = False
-        if process_thread_queue:
-            self._process_thread_queue()
-
-    def timer_tick(self):
-        self._timer_ticked = True
 
     # EVENTS
     # these methods will be used when inheriting the class
@@ -247,28 +214,127 @@ class PyGrid:
         if return_bg:
             return self._background_color
         return None
+
+    def _process_thread_queue(self):
+        if self._final_thread_draw_queue:
+            self._screen_changed = True
+            for (cell_x, cell_y), color in self._final_thread_draw_queue.items():
+                if not color:
+                    self._erase_cell_threadless(cell_x, cell_y)
+                else:
+                    self._draw_cell_threadless(cell_x, cell_y, color)
+
+    def _in_render_zone(self, cell_x, cell_y):
+        x = (cell_x - self._pos_x) * self._cell_size
+        if self._render_bound_left < x < self._render_bound_right:
+
+            y = (cell_y - self._pos_y) * self._cell_size
+            if self._render_bound_top < y < self._render_bound_bottom:
+                return True
+
+        return False
+
+    # def _clear_thread_queue(self):
+    #     self._thread_draw_queue = {}
+
+    def _draw_cell_threaded(self, cell_x, cell_y, color):
+        if self._in_render_zone(cell_x, cell_y):
+            self._thread_draw_queue[(cell_x, cell_y)] = color
+        else:
+            if (cell_x, cell_y) in self._thread_draw_queue:
+                del self._thread_draw_queue[(cell_x, cell_y)]
+            self._add_cell(cell_x, cell_y, color)
+
+    def _erase_cell_threaded(self, cell_x, cell_y):
+        if self._in_render_zone(cell_x, cell_y):
+            self._thread_draw_queue[(cell_x, cell_y)] = None
+        else:
+            if (cell_x, cell_y) in self._thread_draw_queue:
+                del self._thread_draw_queue[(cell_x, cell_y)]
+            self._delete_cell(cell_x, cell_y)
+
+    def set_timer(self, duration):
+        # duration is in seconds, multiply by 1000 for milliseconds
+        self._timer_duration = duration * 1000
     
     def _increment_timer(self, delta):
         self._timer_progress += delta
         if self._timer_progress >= self._timer_duration:
-            if self._timer_ticked:
-                self._process_thread_queue()
-
-                n_ticks = int(self._timer_progress / self._timer_duration)
-                self._timer_ticked = False
-                self.on_timer(n_ticks)
+            if not self._user_thread_busy and not self._screen_thread_busy:
+                self._n_ticks = int(self._timer_progress / self._timer_duration)
                 self._timer_progress %= self._timer_duration
 
-
-    def _process_thread_queue(self):
-        if self._thread_draw_queue:
-            self._screen_changed = True
-            for (cell_x, cell_y), color in self._thread_draw_queue.items():
-                if not color:
-                    self.erase_cell(cell_x, cell_y)
+                if self._threads_active:
+                    self._final_thread_draw_queue = self._thread_draw_queue
+                    self._thread_draw_queue = {}
+                    self._user_thread_busy = True
+                    self._screen_thread_busy = True
+                    self._thread_event.set()
+                    self._thread_event.clear()
                 else:
-                    self.draw_cell(cell_x, cell_y, color)
-            self._clear_thread_queue()
+                    self.on_timer(self._n_ticks)
+
+    def start_timer(self, multithreaded=False):
+        if self._timer_active:
+            return
+        # self._clear_thread_queue()
+        self._timer_active = True
+        self._timer_progress = 0
+        if multithreaded:
+            self._n_ticks = 1
+            self._start_user_thread()
+
+    def stop_timer(self):
+        if not self._timer_active:
+            return
+
+        if self._main_thread != threading.currentThread():
+            self._stopped_timer_in_thread = True
+            return
+
+        self._timer_active = False
+        if self._threads_active:
+            self._end_user_thread()
+
+    def _screen_thread_func(self):
+        self._thread_event.wait()
+        while self._threads_active:
+            self._process_thread_queue()
+            self._screen_thread_busy = False
+            if not self._timer_active:
+                self._stopped_timer_in_thread = True
+                break
+            self._thread_event.wait()
+
+
+    def _user_thread_func(self):
+        while self._threads_active:
+            self.on_timer(self._n_ticks)
+            self._user_thread_busy = False
+            self._thread_event.wait()
+
+    def _start_user_thread(self):
+        self.draw_cell = self._draw_cell_threaded
+        self.erase_cell = self._erase_cell_threaded
+        self._user_thread_busy = True
+        self._threads_active = True
+        self._screen_thread_busy = False
+        self._thread_event.clear()
+        self._screen_thread = threading.Thread(target=self._screen_thread_func)
+        self._user_thread = threading.Thread(target=self._user_thread_func)
+        self._user_thread.start()
+        self._screen_thread.start()
+
+    def _end_user_thread(self):
+        self._threads_active = False
+        self._thread_event.set()
+        self._user_thread_busy = False
+        self._screen_thread_busy = False
+        self._final_thread_draw_queue = self._thread_draw_queue
+        self._thread_draw_queue = {}
+        self._process_thread_queue()
+        self.draw_cell = self._draw_cell_threadless
+        self.erase_cell = self._erase_cell_threadless
     
     def start(self):
         pygame.init()
@@ -286,6 +352,10 @@ class PyGrid:
         delta = 0
 
         while True:
+            if self._stopped_timer_in_thread:
+                self._stopped_timer_in_thread = False
+                self.stop_timer()
+
             self._handle_events()
 
             if self._x_vel or self._y_vel:
@@ -371,7 +441,7 @@ class PyGrid:
         if original_color != color:
             self._animated_cells[(cell_x, cell_y)] = [original_color, color, 0, delete_after]
 
-    def draw_cell(self, cell_x, cell_y, color, animate=False):
+    def _draw_cell_threadless(self, cell_x, cell_y, color, animate=False):
         self._end_animation(cell_x, cell_y)
         if animate:
             self._start_animation(cell_x, cell_y, color)
@@ -380,7 +450,7 @@ class PyGrid:
             self._add_cell(cell_x, cell_y, color)
             self._draw_cell(cell_x, cell_y, color)
 
-    def erase_cell(self, cell_x, cell_y, animate=False):
+    def _erase_cell_threadless(self, cell_x, cell_y, animate=False):
         self._end_animation(cell_x, cell_y)
         if animate:
             self._start_animation(
@@ -489,11 +559,17 @@ class PyGrid:
         for column in range(self._n_columns):
             self._screen.blit(self._grid_column, (x, 0))
             x += self._cell_size
+
+    def _on_exit(self):
+        self._threads_active = False
+        self._thread_event.set()
+        pygame.quit()
+        sys.exit()
+
     def _handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                self._on_exit()
 
             elif event.type == pygame.VIDEORESIZE:
                 self._on_resize(event.w, event.h)
