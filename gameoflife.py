@@ -1,8 +1,6 @@
 from draw_grid import DrawGrid
-from threading import Thread
 from collections import defaultdict
 from keycodes import *
-
 
 
 class GameOfLifeGrid(DrawGrid):
@@ -16,9 +14,9 @@ class GameOfLifeGrid(DrawGrid):
             fps=fps
         )
 
+        self.n_cells = 0
         self.paused = True
         self.cell_color = cell_color
-
 
         # rather than a high speed just having a low delay,
         # it can have a fairly low delay but combined with multiple iterations
@@ -30,8 +28,6 @@ class GameOfLifeGrid(DrawGrid):
         self.iterations_per_ticks = [1, 1,   1,    1,      1,    3,    5,    11,  15]
 
         self.set_timer(self.iteration_delay)
-
-        self.thread = None
 
         self.change_list = []
         self.alive_cells = set()
@@ -53,6 +49,8 @@ class GameOfLifeGrid(DrawGrid):
             if (cell_x, cell_y) not in self.alive_cells:
                 self.draw_cell(cell_x, cell_y, self.cell_color, animate=True)
                 self.add_cell(cell_x, cell_y)
+                self.n_cells += 1
+                print(self.n_cells)
 
         elif button == RIGHT_MOUSE:
             if (cell_x, cell_y) in self.alive_cells:
@@ -78,7 +76,7 @@ class GameOfLifeGrid(DrawGrid):
 
         return cells_to_add, cells_to_delete
 
-    def thread_func(self):
+    def on_timer(self, n_ticks):
         for iteration in range(self.iterations_per_tick):
             cells_to_add, cells_to_delete = self.do_iteration()
 
@@ -86,17 +84,11 @@ class GameOfLifeGrid(DrawGrid):
 
             for cell_x, cell_y in cells_to_add:
                 self.add_cell(cell_x, cell_y)
-                self.thread_draw_cell(cell_x, cell_y, self.cell_color)
+                self.draw_cell(cell_x, cell_y, self.cell_color)
 
             for cell_x, cell_y in cells_to_delete:
                 self.delete_cell(cell_x, cell_y)
-                self.thread_erase_cell(cell_x, cell_y)
-
-        self.timer_tick()
-
-    def on_timer(self, n_ticks):
-        self.thread = Thread(target=self.thread_func)
-        self.thread.start()
+                self.erase_cell(cell_x, cell_y)
 
     def add_cell(self, cell_x, cell_y):
         self.change_list.append((cell_x, cell_y))
@@ -149,9 +141,7 @@ class GameOfLifeGrid(DrawGrid):
             self.reset()
 
     def reset(self):
-        if self.thread:
-            self.thread.join()
-        self.stop_timer(process_thread_queue=False)
+        self.stop_timer()
         self.clear()
         self.change_list = []
         self.alive_cells = set()
@@ -160,12 +150,10 @@ class GameOfLifeGrid(DrawGrid):
 
     def pause(self):
         self.stop_timer()
-        if self.thread:
-            self.thread.join()
         self.paused = True
 
     def play(self):
-        self.start_timer()
+        self.start_timer(multithreaded=True)
         self.paused = False
 
 if __name__ == "__main__":
