@@ -14,7 +14,6 @@ class GameOfLifeGrid(DrawGrid):
             fps=fps
         )
 
-        self.n_cells = 0
         self.paused = True
         self.cell_color = cell_color
 
@@ -49,8 +48,6 @@ class GameOfLifeGrid(DrawGrid):
             if (cell_x, cell_y) not in self.alive_cells:
                 self.draw_cell(cell_x, cell_y, self.cell_color, animate=True)
                 self.add_cell(cell_x, cell_y)
-                self.n_cells += 1
-                print(self.n_cells)
 
         elif button == RIGHT_MOUSE:
             if (cell_x, cell_y) in self.alive_cells:
