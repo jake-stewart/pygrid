@@ -121,7 +121,7 @@ class PathfindingGrid(DrawGrid):
                 self.solving_state = SOLVING_ACTIVE
                 self.start_timer(multithreaded=True)
             elif self.solving_state == SOLVING_ACTIVE:
-                self.stop_timer()
+                self.stop_timer(clear_queue=True)
                 self.solving_state = SOLVING_PAUSED
             else:
                 self.solve()
@@ -154,7 +154,7 @@ class PathfindingGrid(DrawGrid):
             self.set_timer(self.iteration_delay)
 
     def clear_solve(self):
-        self.stop_timer()
+        self.stop_timer(clear_queue=True)
         del self.explored_cells[self.start_cell]
         for cell in self.explored_cells:
             self.erase_cell(*cell)
@@ -162,7 +162,7 @@ class PathfindingGrid(DrawGrid):
         self.explored_cells = {}
 
     def reset(self):
-        self.stop_timer()
+        self.stop_timer(clear_queue=True)
         self.start_cell = None
         self.end_cell = None
         self.queue = []
