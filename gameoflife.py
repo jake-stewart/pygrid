@@ -13,6 +13,7 @@ class GameOfLifeGrid(DrawGrid):
             grid_thickness=grid_thickness,
             fps=fps
         )
+        self.n_cells = 0
 
         self.paused = True
         self.cell_color = cell_color
@@ -46,6 +47,8 @@ class GameOfLifeGrid(DrawGrid):
 
         if button == LEFT_MOUSE:
             if (cell_x, cell_y) not in self.alive_cells:
+                self.n_cells += 1
+                # print(self.n_cells)
                 self.draw_cell(cell_x, cell_y, self.cell_color, animate=True)
                 self.add_cell(cell_x, cell_y)
 
@@ -74,6 +77,8 @@ class GameOfLifeGrid(DrawGrid):
         return cells_to_add, cells_to_delete
 
     def on_timer(self, n_ticks):
+        cells_to_draw = {}
+
         for iteration in range(self.iterations_per_tick):
             cells_to_add, cells_to_delete = self.do_iteration()
 
@@ -81,10 +86,16 @@ class GameOfLifeGrid(DrawGrid):
 
             for cell_x, cell_y in cells_to_add:
                 self.add_cell(cell_x, cell_y)
-                self.draw_cell(cell_x, cell_y, self.cell_color)
+                cells_to_draw[(cell_x, cell_y)] = self.cell_color
 
             for cell_x, cell_y in cells_to_delete:
                 self.delete_cell(cell_x, cell_y)
+                cells_to_draw[(cell_x, cell_y)] = None
+
+        for (cell_x, cell_y), color in cells_to_draw.items():
+            if color:
+                self.draw_cell(cell_x, cell_y, color)
+            else:
                 self.erase_cell(cell_x, cell_y)
 
     def add_cell(self, cell_x, cell_y):
@@ -131,14 +142,13 @@ class GameOfLifeGrid(DrawGrid):
 
         elif KEY_1 <= key <= KEY_9:
             self.speed_index = key - KEY_1
-            if not self.paused:
-                self.set_timer(self.iteration_delay)
+            self.set_timer(self.iteration_delay)
 
         elif key == KEY_DELETE:
             self.reset()
 
     def reset(self):
-        self.stop_timer()
+        self.stop_timer(clear_queue=True)
         self.clear()
         self.change_list = []
         self.alive_cells = set()
@@ -146,12 +156,12 @@ class GameOfLifeGrid(DrawGrid):
         self.paused = True
 
     def pause(self):
-        self.stop_timer()
         self.paused = True
+        self.stop_timer()
 
     def play(self):
-        self.start_timer(multithreaded=True)
         self.paused = False
+        self.start_timer(multithreaded=True)
 
 if __name__ == "__main__":
     from config import config
