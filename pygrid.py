@@ -31,8 +31,8 @@ class PyGrid:
         self._n_columns = n_columns
 
         # user's location on grid (top left corner)
-        self._pos_x: float = 0
-        self._pos_y: float = 0
+        self._pos_x = 0.0
+        self._pos_y = 0.0
 
         # window dimensions
         self._width = width
@@ -140,6 +140,7 @@ class PyGrid:
         self._thread_queue = []
         self._partial_thread_queue = []
 
+        # whether or not the thread is running, the draw method automatically adapts
         self.draw_cell = self._draw_cell_threadless
         self.erase_cell = self._erase_cell_threadless
 
@@ -148,33 +149,21 @@ class PyGrid:
         self._draw_grid()
         self._screen_changed = True
 
-    def clear(self):
-        self._rows = defaultdict(lambda: defaultdict(dict))
-        self._columns = defaultdict(lambda: defaultdict(dict))
-        self._animated_cells = {}
-        self._draw_screen()
-
     def _calc_render_zone(self):
         self._render_bound_left = -self._width * 0.2
         self._render_bound_right = self._width * 1.2
         self._render_bound_top = -self._height * 0.2
         self._render_bound_bottom = self._height * 1.2
 
-        # self._render_bound_left = 0
-        # self._render_bound_right = self._width
-        # self._render_bound_top = 0
-        # self._render_bound_bottom = self._height
-
-    def set_grid_color(self, color):
-        if color == self._color_key:
-            raise ValueError(f"{str(self.color_key)} is reserved for the color key")
-        self._grid_color = color
-
-    # EVENTS
-    # these methods will be used when inheriting the class
+        
+    #
+    # INTERFACE
+    # if you were to extend pygrid, these are the methods you'd care about
+    #
 
     def on_start(self):
-        # called once the grid has loaded
+        # called after grid.start() is called.
+        # useful for drawing cells right away
         pass
 
     def on_timer(self):
@@ -206,7 +195,18 @@ class PyGrid:
         # called when a key is released.
         pass
 
+    def clear(self):
+        # delete all cells and wipe the screen
+        self._rows = defaultdict(lambda: defaultdict(dict))
+        self._columns = defaultdict(lambda: defaultdict(dict))
+        self._animated_cells = {}
+        self._draw_screen()
+
     def get_cell(self, cell_x, cell_y, return_bg=True):
+        # get the cell at point cell_x, cell_y
+        # if return_bg is True, then the background color will be returned
+        # when a cell doesn't exist, rather than None
+
         if row := self._rows.get(cell_y, None):
             if chunk := row.get(cell_x // self._chunk_size, None):
                 return chunk.get(
@@ -217,46 +217,9 @@ class PyGrid:
             return self._background_color
         return None
 
-    def _in_render_zone(self, cell_x, cell_y):
-        x = (cell_x - self._pos_x) * self._cell_size
-        if self._render_bound_left < x < self._render_bound_right:
-
-            y = (cell_y - self._pos_y) * self._cell_size
-            if self._render_bound_top < y < self._render_bound_bottom:
-                return True
-
-        return False
-
-    def _draw_cell_threaded(self, cell_x, cell_y, color):
-        if self._in_render_zone(cell_x, cell_y):
-            self._partial_thread_queue.append((cell_x, cell_y, color))
-        else:
-            self._add_cell(cell_x, cell_y, color)
-
-    def _erase_cell_threaded(self, cell_x, cell_y):
-        if self._in_render_zone(cell_x, cell_y):
-            self._partial_thread_queue.append((cell_x, cell_y, None))
-        else:
-            self._delete_cell(cell_x, cell_y)
-
     def set_timer(self, duration):
         # duration is in seconds, multiply by 1000 for milliseconds
         self._timer_duration = duration * 1000
-    
-    def _increment_timer(self, delta):
-        self._timer_progress += delta
-        if self._timer_progress >= self._timer_duration:
-            if not self._timer_thread_busy and not self._thread_queue:
-                self._n_ticks = int(self._timer_progress / self._timer_duration)
-                self._timer_progress %= self._timer_duration
-                if self._timer_thread_status == ACTIVE:
-                    self._timer_thread_busy = True
-                    self._timer_event.set()
-                    self._timer_event.clear()
-                elif self._timer_thread_status == JOINING:
-                    return
-                else:
-                    self.on_timer(self._n_ticks)
 
     def start_timer(self, multithreaded=False):
         if self._timer_active:
@@ -281,6 +244,85 @@ class PyGrid:
         self._timer_active = False
         if self._timer_thread_status == ACTIVE:
             self._end_timer_thread()
+
+    def start(self):
+        pygame.init()
+
+        self._create_screen()
+        self._apply_grid_effects()
+        self._create_grid_lines()
+        self._calc_n_rows()
+        self._calc_n_columns()
+        self._calc_render_zone()
+        self.on_start()
+        self._draw_screen()
+
+        self._clock = pygame.time.Clock()
+        delta = 0
+
+        while True:
+            self._handle_events()
+            self._handle_mouse_motion()
+
+            if self._x_vel or self._y_vel:
+                self._apply_velocity(delta / 1000)
+
+            if self._animated_cells:
+                self._animate_cells(delta / 1000)
+
+            if self._thread_queue:
+                self._process_thread_queue()
+
+            if self._timer_active:
+                self._increment_timer(delta)
+
+            if self._screen_changed:
+                self._screen_changed = False
+                pygame.display.flip()
+
+            delta = self._clock.tick(self._fps)
+
+            if self._timer_ended_in_thread:
+                self.stop_timer(self._clear_queue)
+                self._timer_ended_in_thread = False
+
+    def _in_render_zone(self, cell_x, cell_y):
+        x = (cell_x - self._pos_x) * self._cell_size
+        if self._render_bound_left < x < self._render_bound_right:
+
+            y = (cell_y - self._pos_y) * self._cell_size
+            if self._render_bound_top < y < self._render_bound_bottom:
+                return True
+
+        return False
+
+    def _draw_cell_threaded(self, cell_x, cell_y, color):
+        if self._in_render_zone(cell_x, cell_y):
+            self._partial_thread_queue.append((cell_x, cell_y, color))
+        else:
+            self._add_cell(cell_x, cell_y, color)
+
+    def _erase_cell_threaded(self, cell_x, cell_y):
+        if self._in_render_zone(cell_x, cell_y):
+            self._partial_thread_queue.append((cell_x, cell_y, None))
+        else:
+            self._delete_cell(cell_x, cell_y)
+    
+    def _increment_timer(self, delta):
+        self._timer_progress += delta
+        if self._timer_progress >= self._timer_duration:
+            if not self._timer_thread_busy and not self._thread_queue:
+                self._n_ticks = int(self._timer_progress / self._timer_duration)
+                self._timer_progress %= self._timer_duration
+                if self._timer_thread_status == ACTIVE:
+                    self._timer_thread_busy = True
+                    self._timer_event.set()
+                    self._timer_event.clear()
+                elif self._timer_thread_status == JOINING:
+                    return
+                else:
+                    self.on_timer(self._n_ticks)
+
 
     def _timer_thread_func(self):
         while self._timer_thread_status == ACTIVE:
@@ -330,46 +372,6 @@ class PyGrid:
                 self._screen_changed = True
                 break
 
-    def start(self):
-        pygame.init()
-
-        self._create_screen()
-        self._apply_grid_effects()
-        self._create_grid_lines()
-        self._calc_n_rows()
-        self._calc_n_columns()
-        self._calc_render_zone()
-        self.on_start()
-        self._draw_screen()
-
-        self._clock = pygame.time.Clock()
-        delta = 0
-
-        while True:
-            self._handle_events()
-            self._handle_mouse_motion()
-
-            if self._x_vel or self._y_vel:
-                self._apply_velocity(delta / 1000)
-
-            if self._animated_cells:
-                self._animate_cells(delta / 1000)
-
-            if self._thread_queue:
-                self._process_thread_queue()
-
-            if self._timer_active:
-                self._increment_timer(delta)
-
-            if self._screen_changed:
-                self._screen_changed = False
-                pygame.display.flip()
-
-            delta = self._clock.tick(self._fps)
-
-            if self._timer_ended_in_thread:
-                self.stop_timer(self._clear_queue)
-                self._timer_ended_in_thread = False
 
 
     def _generate_window_size(self):
@@ -779,30 +781,30 @@ class PyGrid:
                 # horizontal grid. we only need to draw a section of the horizontal
                 # grid that covers the columns introducted since the existing
                 # columns already have theirs
-                self.draw_partial_rows_grids(
+                self._draw_partial_rows_grids(
                     row_start, row_span,
                     column_start, column_span
                 )
             else:
                 # however, if there is no panning left/right, we can just draw the entire
                 # horizontal grids rows for the introducted rows
-                self.draw_rows_grids(row_start, row_span)
+                self._draw_rows_grids(row_start, row_span)
 
             if y_pan:
                 # the same applies for vertical grids introduced rows.
-                self.draw_partial_columns_grids(
+                self.__draw_partial_columns_grids(
                     column_start, column_span,
                     row_start, row_span
                 )
             else:
-                self.draw_columns_grids(column_start, column_span)
+                self._draw_columns_grids(column_start, column_span)
 
         # even though the mouse hasn't moved, its position on the grid has changed
         # this is justification for a mouse event
         self._mouse_moved = True
         self._screen_changed = True
 
-    def draw_columns_grids(self, column_start, column_span):
+    def _draw_columns_grids(self, column_start, column_span):
         x = -self._left_offset + column_start * self._cell_size + self._cell_size - self._grid_thickness
         for column in range(column_start, column_start + column_span):
             self._screen.blit(
@@ -811,7 +813,7 @@ class PyGrid:
             )
             x += self._cell_size
 
-    def draw_partial_columns_grids(self, column_start, column_span,
+    def _draw_partial_columns_grids(self, column_start, column_span,
                                    row_start, row_span):
         if row_start == 0:
             grid_offset = -self._column_grid_length + row_span \
@@ -837,7 +839,7 @@ class PyGrid:
 
             x += self._cell_size
 
-    def draw_rows_grids(self, row_start, row_span):
+    def _draw_rows_grids(self, row_start, row_span):
         y = -self._top_offset + row_start * self._cell_size \
             + self._cell_size - self._grid_thickness
         for row in range(row_start, row_start + row_span):
@@ -847,7 +849,7 @@ class PyGrid:
             )
             y += self._cell_size
 
-    def draw_partial_rows_grids(self, row_start, row_span,
+    def _draw_partial_rows_grids(self, row_start, row_span,
                                 column_start, column_span):
         if column_start == 0:
             grid_offset = -self._row_grid_length + column_span \
