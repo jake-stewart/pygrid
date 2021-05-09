@@ -132,8 +132,8 @@ class PyGrid:
         self._clear_queue = False
         self._main_thread = threading.currentThread()
         self._timer_event = threading.Event()
-        self._thread_queue = []
-        self._partial_thread_queue = []
+        self._draw_queue = []
+        self._next_draw_queue = []
 
         # whether or not the thread is running, the draw method automatically adapts
         self.draw_cell = self._draw_cell_threadless
@@ -209,7 +209,7 @@ class PyGrid:
     def start_timer(self, multithreaded=False):
         if self._timer_active:
             return
-        # self._clear_thread_queue()
+        # self._clear_draw_queue()
         self._timer_active = True
         self._timer_progress = 0
         if multithreaded:
@@ -253,8 +253,8 @@ class PyGrid:
             if self._animated_cells:
                 self._animate_cells(delta / 1000)
 
-            if self._thread_queue:
-                self._process_thread_queue()
+            if self._draw_queue:
+                self._process_draw_queue()
 
             if self._timer_active:
                 self._increment_timer(delta)
@@ -295,17 +295,17 @@ class PyGrid:
     def _draw_cell_threaded(self, cell_x, cell_y, color):
         self._add_cell(cell_x, cell_y, color)
         if self._in_render_zone(cell_x, cell_y):
-            self._partial_thread_queue.append((cell_x, cell_y, color))
+            self._next_draw_queue.append((cell_x, cell_y, color))
 
     def _erase_cell_threaded(self, cell_x, cell_y):
         self._delete_cell(cell_x, cell_y)
         if self._in_render_zone(cell_x, cell_y):
-            self._partial_thread_queue.append((cell_x, cell_y, self._background_color))
+            self._next_draw_queue.append((cell_x, cell_y, self._background_color))
     
     def _increment_timer(self, delta):
         self._timer_progress += delta
         if self._timer_progress >= self._timer_duration:
-            if not self._timer_thread_busy and not self._thread_queue:
+            if not self._timer_thread_busy and not self._draw_queue:
                 self._n_ticks = int(self._timer_progress / self._timer_duration)
                 self._timer_progress %= self._timer_duration
                 if self._timer_thread_active:
@@ -320,8 +320,8 @@ class PyGrid:
         while self._timer_thread_active:
             self.on_timer(self._n_ticks)
 
-            self._thread_queue = self._partial_thread_queue
-            self._partial_thread_queue = []
+            self._draw_queue = self._next_draw_queue
+            self._next_draw_queue = []
 
             self._timer_thread_busy = False
             self._timer_event.wait()
@@ -341,19 +341,19 @@ class PyGrid:
         self._timer_event.set()
         self._timer_thread.join()
         if clear_queue:
-            self._thread_queue = []
+            self._draw_queue = []
         self.draw_cell = self._draw_cell_threadless
         self.erase_cell = self._erase_cell_threadless
 
-    def _process_thread_queue(self):
+    def _process_draw_queue(self):
         max_tick = pygame.time.get_ticks() + self._frame_delta
 
         while pygame.time.get_ticks() < max_tick:
-            for i in range(min(len(self._thread_queue), 100)):
-                cell_x, cell_y, color = self._thread_queue.pop(0)
+            for i in range(min(len(self._draw_queue), 100)):
+                cell_x, cell_y, color = self._draw_queue.pop(0)
                 self._draw_cell(cell_x, cell_y, color)
 
-            if not self._thread_queue:
+            if not self._draw_queue:
                 self._screen_changed = True
                 break
 
