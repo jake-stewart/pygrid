@@ -144,16 +144,6 @@ class PyGrid:
         self.draw_cell = self._draw_cell_threadless
         self.erase_cell = self._erase_cell_threadless
 
-    def _draw_screen(self):
-        self._draw_rows_cells(0, self._n_rows)
-        self._draw_grid()
-        self._screen_changed = True
-
-    def _calc_render_zone(self):
-        self._render_bound_left = -self._width * 0.2
-        self._render_bound_right = self._width * 1.2
-        self._render_bound_top = -self._height * 0.2
-        self._render_bound_bottom = self._height * 1.2
 
         
     #
@@ -285,6 +275,19 @@ class PyGrid:
             if self._timer_ended_in_thread:
                 self.stop_timer(self._clear_queue)
                 self._timer_ended_in_thread = False
+
+
+
+    def _draw_screen(self):
+        self._draw_rows_cells(0, self._n_rows)
+        self._draw_grid()
+        self._screen_changed = True
+
+    def _calc_render_zone(self):
+        self._render_bound_left = -self._width * 0.2
+        self._render_bound_right = self._width * 1.2
+        self._render_bound_top = -self._height * 0.2
+        self._render_bound_bottom = self._height * 1.2
 
     def _in_render_zone(self, cell_x, cell_y):
         x = (cell_x - self._pos_x) * self._cell_size
