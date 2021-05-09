@@ -300,7 +300,7 @@ class PyGrid:
     def _erase_cell_threaded(self, cell_x, cell_y):
         self._delete_cell(cell_x, cell_y)
         if self._in_render_zone(cell_x, cell_y):
-            self._partial_thread_queue.append((cell_x, cell_y, None))
+            self._partial_thread_queue.append((cell_x, cell_y, self._background_color))
     
     def _increment_timer(self, delta):
         self._timer_progress += delta
@@ -351,10 +351,7 @@ class PyGrid:
         while pygame.time.get_ticks() < max_tick:
             for i in range(min(len(self._thread_queue), 100)):
                 cell_x, cell_y, color = self._thread_queue.pop(0)
-                if color:
-                    self._draw_cell(cell_x, cell_y, color)
-                else:
-                    self._draw_cell(cell_x, cell_y, self._background_color)
+                self._draw_cell(cell_x, cell_y, color)
 
             if not self._thread_queue:
                 self._screen_changed = True
