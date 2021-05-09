@@ -293,16 +293,14 @@ class PyGrid:
         return False
 
     def _draw_cell_threaded(self, cell_x, cell_y, color):
+        self._add_cell(cell_x, cell_y, color)
         if self._in_render_zone(cell_x, cell_y):
             self._partial_thread_queue.append((cell_x, cell_y, color))
-        else:
-            self._add_cell(cell_x, cell_y, color)
 
     def _erase_cell_threaded(self, cell_x, cell_y):
+        self._delete_cell(cell_x, cell_y)
         if self._in_render_zone(cell_x, cell_y):
             self._partial_thread_queue.append((cell_x, cell_y, None))
-        else:
-            self._delete_cell(cell_x, cell_y)
     
     def _increment_timer(self, delta):
         self._timer_progress += delta
@@ -355,10 +353,8 @@ class PyGrid:
                 cell_x, cell_y, color = self._thread_queue.pop(0)
                 if color:
                     self._draw_cell(cell_x, cell_y, color)
-                    self._add_cell(cell_x, cell_y, color)
                 else:
                     self._draw_cell(cell_x, cell_y, self._background_color)
-                    self._delete_cell(cell_x, cell_y)
 
             if not self._thread_queue:
                 self._screen_changed = True
@@ -782,7 +778,7 @@ class PyGrid:
 
             if y_pan:
                 # the same applies for vertical grids introduced rows.
-                self.__draw_partial_columns_grids(
+                self._draw_partial_columns_grids(
                     column_start, column_span,
                     row_start, row_span
                 )
