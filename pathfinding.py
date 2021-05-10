@@ -290,43 +290,31 @@ class PathfindingGrid(DrawGrid):
             self.draw_cell(*cell, self.scan_color)
 
     def insert_on_heuristic(self, cell, heuristic):
-        # cells generally inserted near the start of the queue
-        # a binary search wouldn't be any faster than a linear search
-        # however, we can find a min/max for the binary search and contain
-        # it at the start of the queue. Has noticeable speed boost for large
-        # and open searches.
-
-        # no point searching if queue is empty
         if not self.queue:
             self.queue.append((cell, heuristic))
 
-        # find left/right bounds for binary search
-        r = 1
-        l = 0
-        max_r = len(self.queue)
+        # cells are inserted closer to the start of the array
+        # we first find the bounds to perform binary search
+        # more efficient than searching the entire array
+        r_idx = 1
+        l_idx = 0
+        r_bound = len(self.queue)
 
-        # while the right bound is smaller than the hueristic,
-        # we need to increase it
-        while r < max_r and self.queue[r][1] < heuristic:
-            l = r + 1
-            r *= 2
+        while r_index < r_bound and self.queue[r_idx][1] < heuristic:
+            l_idx = r_idx + 1
+            r_idx *= 2
 
-        # make sure right bound isn't longer than the array
-        r = min(max_r, r)
+        r_idx = min(r_bound, r_idx)
 
-        # binary search
-        # though, it's a little different.
-        # we want to find an index, even if there is no cell currently there
-        # we also want to find the leftmost index to insert at, so it
-        # will be processed sooner (best-first)
-        while l < r:
-            m = l + (r - l) // 2
-            if self.queue[m][1] >= heuristic:
-                r = m
+        # binary search to find insert position (insert left)
+        while l_idx < r_idx:
+            m_idx = l_idx + (r_idx - l_idx) // 2
+            if self.queue[m_idx][1] >= heuristic:
+                r_idx = m_idx
             else:
-                l = m + 1
+                l_idx = m_idx + 1
 
-        self.queue.insert(l, (cell, heuristic))
+        self.queue.insert(l_idx, (cell, heuristic))
 
     def expand_search(self):
         if not self.queue:
