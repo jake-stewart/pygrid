@@ -34,8 +34,8 @@ class PathfindingGrid(DrawGrid):
         # rather than a high speed just having a low delay,
         # it can have a fairly low delay but combined with multiple iterations
         self.speed_index = 3
-        self.iteration_delays     = [0.1, 0.05, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
-        self.iterations_per_ticks = [  1,    1,    1,    2,    4,    8,   16,   32,   64,  128]
+        self.iteration_delays     = [0.1, 0.05, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02,   0.02,  0.02]
+        self.iterations_per_ticks = [  1,    2,    4,   16,   32,   64,  128,   256,   512,  1024]
         self.set_timer(self.iteration_delays[self.speed_index])
 
         self.start_cell = None
