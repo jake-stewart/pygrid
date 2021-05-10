@@ -16,6 +16,7 @@ class GameOfLifeGrid(DrawGrid):
         self.n_cells = 0
 
         self.paused = True
+        self.resetting = False
         self.cell_color = cell_color
 
         # rather than a high speed just having a low delay,
@@ -32,6 +33,23 @@ class GameOfLifeGrid(DrawGrid):
         self.change_list = []
         self.alive_cells = set()
         self.neighbours = defaultdict(int)
+
+    def on_timer_end(self):
+        if self.resetting:
+            self.reset()
+        self.paused = True
+
+    def reset(self):
+        self.clear()
+        self.resetting = False
+        self.change_list = []
+        self.alive_cells = set()
+        self.neighbours = defaultdict(int)
+
+    def on_start(self):
+        for row in range(10000):
+            self.draw_cell(row, 1, self.cell_color)
+            self.add_cell(row, 1)
 
     @property
     def iteration_delay(self):
@@ -148,15 +166,10 @@ class GameOfLifeGrid(DrawGrid):
             self.reset()
 
     def reset(self):
-        self.stop_timer(clear_queue=True)
-        self.clear()
-        self.change_list = []
-        self.alive_cells = set()
-        self.neighbours = defaultdict(int)
-        self.paused = True
+        self.resetting = True
+        self.stop_timer()
 
     def pause(self):
-        self.paused = True
         self.stop_timer()
 
     def play(self):
