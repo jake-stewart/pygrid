@@ -7,14 +7,8 @@ BREADTH_FIRST = 0
 BEST_FIRST = 1
 A_STAR = 2
 
-# solving states
-NOT_SOLVING = 0
-SOLVING_ACTIVE = 1
-SOLVING_PAUSED = 2
-SOLVING_FINISHED = 3
-
-
 class PathfindingGrid(DrawGrid):
+
     def __init__(
             self, background_color, grid_color, cell_color, trace_color,
             start_color, end_color, scan_color, scanned_color, grid_thickness,
@@ -35,12 +29,16 @@ class PathfindingGrid(DrawGrid):
         # it can have a fairly low delay but combined with multiple iterations
         self.speed_index = 3
         self.iteration_delays     = [0.1, 0.05, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02,   0.02,  0.02]
-        self.iterations_per_ticks = [  1,    2,    4,   16,   32,   64,  128,   256,   512,  1024]
+        self.iterations_per_ticks = [  1,    2,    4,   16,   32,   64,  128,   256,   512,  5000]
         self.set_timer(self.iteration_delays[self.speed_index])
 
         self.start_cell = None
         self.end_cell = None
-        self.solving_state = NOT_SOLVING
+        self.paused = True
+        self.resetting = False
+        self.clearing = False
+        self.solving_finished = False
+        self.solving_started = False
         self.cell_color = cell_color
         self.queue = []
         self.explored_cells = {}
@@ -61,6 +59,22 @@ class PathfindingGrid(DrawGrid):
     def iterations_per_tick(self):
         return self.iterations_per_ticks[self.speed_index]
 
+    def play(self):
+        if self.solving_started:
+            if self.solving_finished:
+                # restart if finished
+                self.solve()
+            else:
+                # otherwise resume
+                self.paused = False
+                self.start_timer(multithreaded=True)
+
+        elif self.start_cell and self.end_cell:
+            self.solve()
+
+    def pause(self):
+        self.stop_timer()
+
     def is_special_cell(self, cell_x, cell_y):
         if (cell_x, cell_y) == self.start_cell:
             return True
@@ -69,12 +83,10 @@ class PathfindingGrid(DrawGrid):
         return False
 
     def on_mouse_event(self, cell_x, cell_y, button, pressed):
-        if self.solving_state == SOLVING_ACTIVE:
+        if not self.paused:
             return
 
-        if self.solving_state == SOLVING_PAUSED or \
-                self.solving_state == SOLVING_FINISHED:
-            self.solving_state = NOT_SOLVING
+        if self.solving_started:
             self.clear_solve()
 
         if button == LEFT_MOUSE:
@@ -117,30 +129,30 @@ class PathfindingGrid(DrawGrid):
 
     def on_key_down(self, key):
         if key == KEY_SPACE:  # space
-            if self.solving_state == SOLVING_PAUSED:
-                self.solving_state = SOLVING_ACTIVE
-                self.start_timer(multithreaded=True)
-            elif self.solving_state == SOLVING_ACTIVE:
-                self.stop_timer()
-                self.solving_state = SOLVING_PAUSED
+            if self.paused:
+                self.play()
             else:
-                self.solve()
+                self.pause()
 
         elif key == KEY_ESCAPE:  # escape
-            if self.solving_state != NOT_SOLVING:
-                self.solving_state = NOT_SOLVING
+            if self.paused:
                 self.clear_solve()
+            else:
+                self.clearing = True
+                self.stop_timer()
 
         elif key == KEY_DELETE:
-            self.reset()
+            if self.paused:
+                self.reset()
+            else:
+                self.resetting = True
+                self.stop_timer()
 
         elif KEY_A <= key <= KEY_C:
-            if self.solving_state == SOLVING_ACTIVE:
+            if not self.paused:
                 return
 
-            if self.solving_state != NOT_SOLVING:
-                self.clear_solve()
-                self.solving_state = NOT_SOLVING
+            self.clear_solve()
 
             if key == KEY_A:
                 self.algorithm = BREADTH_FIRST
@@ -154,38 +166,48 @@ class PathfindingGrid(DrawGrid):
             self.set_timer(self.iteration_delay)
 
     def clear_solve(self):
-        self.stop_timer(clear_queue=True)
-        del self.explored_cells[self.start_cell]
-        for cell in self.explored_cells:
-            self.erase_cell(*cell)
+        self.clearing = False
+        self.solving_started = False
+        self.solving_finished = False
+        self.stop_timer()
+        if self.explored_cells:
+            del self.explored_cells[self.start_cell]
+            for cell in self.explored_cells:
+                self.erase_cell(*cell)
         self.queue = []
         self.explored_cells = {}
 
     def reset(self):
-        self.stop_timer(clear_queue=True)
+        self.resetting = False
         self.start_cell = None
         self.end_cell = None
         self.queue = []
         self.explored_cells = {}
-        self.solving_state = NOT_SOLVING
+        self.solving_finished = False
+        self.solving_started = False
         self.clear()
 
     def solve(self):
-        if self.solving_state == SOLVING_ACTIVE or self.solving_state == SOLVING_PAUSED:
-            return
-
         if not self.start_cell or not self.end_cell:
             return
 
-        if self.solving_state == SOLVING_FINISHED:
+        if self.solving_finished:
             self.clear_solve()
 
         self.found_end_cell = False
         self.trace_cell = self.end_cell
-        self.solving_state = SOLVING_ACTIVE
         self.queue = [(self.start_cell, 0)]
+        self.solving_started = True
         self.explored_cells = {self.start_cell: 1}
+        self.paused = False
         self.start_timer(multithreaded=True)
+
+    def on_timer_end(self):
+        if self.resetting:
+            self.reset()
+        elif self.clearing:
+            self.clear_solve()
+        self.paused = True
 
     def on_timer(self, n_ticks):
         for i in range(self.iterations_per_tick):
@@ -210,7 +232,7 @@ class PathfindingGrid(DrawGrid):
         # found target cell, return true
         if counter == 1:
             self.stop_timer()
-            self.solving_state = SOLVING_FINISHED
+            self.solving_finished = True
             return True
 
         # path is shorter than current chosen path
@@ -231,7 +253,7 @@ class PathfindingGrid(DrawGrid):
                 or self.evaluate_path((cell_x, cell_y + 1)) \
                 or self.evaluate_path((cell_x, cell_y - 1)):
             self.stop_timer()
-            self.solving_state = SOLVING_FINISHED
+            self.solving_finished = True
         else:
             self.draw_cell(*self.chosen_cell, self.trace_color)
             self.trace_cell = self.chosen_cell
@@ -261,22 +283,54 @@ class PathfindingGrid(DrawGrid):
                     # adds the path length to it
                     heuristic += self.counter
 
-                # find where in the queue the cell belongs based on heuristic
-                for i, (_, compared_heuristic) in enumerate(self.queue):
-                    if compared_heuristic >= heuristic:
-                        self.queue.insert(i, (cell, heuristic))
-                        break
-                else:
-                    # otherwise, if the queue is empty, plop it on the end
-                    self.queue.append((cell, heuristic))
+                self.insert_on_heuristic(cell, heuristic)
 
             # save the path length so we can use it for backtracking later
             self.explored_cells[cell] = self.counter
             self.draw_cell(*cell, self.scan_color)
 
+    def insert_on_heuristic(self, cell, heuristic):
+        # cells generally inserted near the start of the queue
+        # a binary search wouldn't be any faster than a linear search
+        # however, we can find a min/max for the binary search and contain
+        # it at the start of the queue. Has noticeable speed boost for large
+        # and open searches.
+
+        # no point searching if queue is empty
+        if not self.queue:
+            self.queue.append((cell, heuristic))
+
+        # find left/right bounds for binary search
+        r = 1
+        l = 0
+        max_r = len(self.queue)
+
+        # while the right bound is smaller than the hueristic,
+        # we need to increase it
+        while r < max_r and self.queue[r][1] < heuristic:
+            l = r + 1
+            r *= 2
+
+        # make sure right bound isn't longer than the array
+        r = min(max_r, r)
+
+        # binary search
+        # though, it's a little different.
+        # we want to find an index, even if there is no cell currently there
+        # we also want to find the leftmost index to insert at, so it
+        # will be processed sooner (best-first)
+        while l < r:
+            m = l + (r - l) // 2
+            if self.queue[m][1] >= heuristic:
+                r = m
+            else:
+                l = m + 1
+
+        self.queue.insert(l, (cell, heuristic))
+
     def expand_search(self):
         if not self.queue:
-            self.solving_state = SOLVING_FINISHED
+            self.solving_finished = True
             self.stop_timer()
             return
 
