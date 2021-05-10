@@ -6,7 +6,7 @@ An infinite, zoomable, pannable, resizable, multi-threaded grid written in pytho
 `draw_grid.py` extends the PyGrid class to add smooth mouse drawing. `gameoflife.py` and `pathfinding.py` both use this.
 
 #### Requirements
-* Python 3.9+
+* Python 3.6+
 * Pygame `python3 -m pip install pygame`
 
 <br />
