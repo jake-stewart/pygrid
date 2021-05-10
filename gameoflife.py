@@ -46,11 +46,6 @@ class GameOfLifeGrid(DrawGrid):
         self.alive_cells = set()
         self.neighbours = defaultdict(int)
 
-    def on_start(self):
-        for row in range(10000):
-            self.draw_cell(row, 1, self.cell_color)
-            self.add_cell(row, 1)
-
     @property
     def iteration_delay(self):
         return self.iteration_delays[self.speed_index]
