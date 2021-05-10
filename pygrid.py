@@ -192,15 +192,15 @@ class PyGrid:
         # if return_bg is True, then the background color will be returned
         # when a cell doesn't exist, rather than None
 
-        if row := self._rows.get(cell_y, None):
-            if chunk := row.get(cell_x // self._chunk_size, None):
-                return chunk.get(
-                    cell_x,
-                    self._background_color if return_bg else None
-                )
-        if return_bg:
-            return self._background_color
-        return None
+        default_color = self._background_color if return_bg else None
+
+        row = self._rows.get(cell_y, None)
+        if row:
+            chunk = row.get(cell_x // self._chunk_size, None)
+            if chunk:
+                return chunk.get(cell_x, default_color)
+
+        return default_color
 
     def set_timer(self, duration):
         # duration is in seconds, multiply by 1000 for milliseconds
@@ -476,23 +476,29 @@ class PyGrid:
         self.cell_y = math.floor(self._pos_y)
         for row_n in range(self.cell_y + row_start,
                            self.cell_y + row_start + row_span):
-            if row := self._rows.get(row_n, None):
-                for chunk_n in range(chunk_start, chunk_end):
-                    if chunk := row.get(chunk_n, None):
-                        while True:
-                            try:
-                                for column_n, cell in chunk.items():
-                                    self._draw_cell(
-                                        column_n, row_n,
-                                        cell,
-                                        draw_grid=False
-                                    )
-                                break
+            row = self._rows.get(row_n, None)
+            if not row:
+                continue
 
-                            # if the chunk changes during the iteration, redraw that chunk
-                            # this allows for drawing to occur on another thread
-                            except RuntimeError:
-                                pass
+            for chunk_n in range(chunk_start, chunk_end):
+                chunk = row.get(chunk_n, None)
+                if not chunk:
+                    continue
+
+                while True:
+                    try:
+                        for column_n, cell in chunk.items():
+                            self._draw_cell(
+                                column_n, row_n,
+                                cell,
+                                draw_grid=False
+                            )
+                        break
+
+                    # if the chunk changes during the iteration, redraw that chunk
+                    # this allows for drawing to occur on another thread
+                    except RuntimeError:
+                        pass
 
     def _draw_columns_cells(self, column_start, column_span):
         self._clear_region(
@@ -507,19 +513,26 @@ class PyGrid:
         self.cell_x = math.floor(self._pos_x)
         for column_n in range(self.cell_x + column_start,
                               self.cell_x + column_start + column_span):
-            if column := self._columns.get(column_n, None):
-                for chunk_n in range(chunk_start, chunk_end):
-                    if chunk := column.get(chunk_n, None):
-                        while True:
-                            try:
-                                for row_n, cell in chunk.items():
-                                    self._draw_cell(
-                                        column_n, row_n,
-                                        cell, draw_grid=False
-                                    )
-                                break
-                            except RuntimeError:
-                                pass
+            column = self._columns.get(column_n, None)
+            if not column:
+                continue
+
+            for chunk_n in range(chunk_start, chunk_end):
+                chunk = column.get(chunk_n, None)
+                if not chunk:
+                    continue
+
+                while True:
+                    try:
+                        for row_n, cell in chunk.items():
+                            self._draw_cell(
+                                column_n, row_n,
+                                cell, draw_grid=False
+                            )
+                        break
+
+                    except RuntimeError:
+                        pass
 
     def _draw_grid(self):
         if not self._grid_thickness:
