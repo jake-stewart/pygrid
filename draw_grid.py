@@ -96,25 +96,3 @@ class DrawGrid(PyGrid):
             last_x = cell_x
             last_y = cell_y
         self._origin = (cell_x, cell_y)
-
-if __name__ == "__main__":
-    from config import config
-
-    cell_color = config["cell_color"]
-
-    def on_mouse_event(self, cell_x, cell_y, button, pressed):
-        if button == 1:
-            self.draw_cell(cell_x, cell_y, cell_color, animate=True)
-        elif button == 3:
-            self.erase_cell(cell_x, cell_y, animate=True)
-
-    DrawGrid.on_mouse_event = on_mouse_event
-
-    grid = DrawGrid(
-        [1, 3],
-        grid_color       = config["grid_color"],
-        background_color = config["background_color"],
-        grid_thickness   = config["grid_thickness"],
-        fps              = config["fps"]
-    )
-    grid.start()
