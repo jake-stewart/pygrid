@@ -25,6 +25,7 @@ class DrawGrid(PyGrid):
 
     def on_mouse_down(self, cell_x, cell_y, button):
         if button in self._draw_buttons:
+            self._fill_x = True
             self._origin = (cell_x, cell_y)
             self._button_down = button
 
@@ -54,7 +55,6 @@ class DrawGrid(PyGrid):
         # initialize variables
         x = last_x = cell_x = origin_x
         y = last_y = cell_y = origin_y
-        fill_x = True
 
         while True:
             if cell_x == target_x:
@@ -85,12 +85,12 @@ class DrawGrid(PyGrid):
             # filling follows the rule: always fill y, unless y has had > 2 cells for the current x
 
             if last_x != cell_x and last_y != cell_y:
-                if fill_x:
+                if self._fill_x:
                     self.on_mouse_event(last_x, cell_y, self._button_down, True)
                 else:
                     self.on_mouse_event(cell_x, last_y, self._button_down, True)
             else:
-                fill_x = last_y == cell_y
+                self._fill_x = last_y == cell_y
 
             last_x = cell_x
             last_y = cell_y
@@ -117,4 +117,3 @@ if __name__ == "__main__":
         fps              = config["fps"]
     )
     grid.start()
-
