@@ -987,12 +987,12 @@ class PyGrid:
         self._pan(pan_x, pan_y)
 
     def _finish_animations(self):
-        for (cell_x, cell_y), (_, color, _, deleting) in self._animated_cells.items():
-            self._draw_cell(cell_x, cell_y, color)
+        for (cell_x, cell_y), (_, _, target_color, _, _, _, deleting) in self._animated_cells.items():
+            self._draw_cell(cell_x, cell_y, target_color)
             if deleting:
                 self._delete_cell(cell_x, cell_y)
             else:
-                self._add_cell(cell_x, cell_y, color)
+                self._add_cell(cell_x, cell_y, target_color)
         self._animated_cells = {}
         self._screen_changed = True
 
