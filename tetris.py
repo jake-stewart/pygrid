@@ -363,6 +363,7 @@ class TetrisGrid(PyGrid):
         self.draw_tetro()
 
     def fall(self):
+        self.tick = 0
         if self.y == self.preview_y:
             # game over
             if self.y <= 0:
@@ -568,7 +569,6 @@ class TetrisGrid(PyGrid):
                         self.fall()
 
                 if self.tick >= self.ticks_per_drop:
-                    self.tick = 0
                     self.fall()
 
             elif self.game_state == DROPPING:
@@ -639,6 +639,7 @@ class TetrisGrid(PyGrid):
 
         elif key in DOWN_KEYS:
             self.hold_time = 0
+            self.fall()
             self.y_vel = 1
 
         elif key in LEFT_KEYS:
