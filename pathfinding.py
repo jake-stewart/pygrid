@@ -22,14 +22,15 @@ class PathfindingGrid(DrawGrid):
             background_color=background_color,
             grid_color=grid_color,
             grid_thickness=grid_thickness,
+            animation="grow",
             fps=fps
         )
 
         # rather than a high speed just having a low delay,
         # it can have a fairly low delay but combined with multiple iterations
         self.speed_index = 3
-        self.iteration_delays     = [0.1, 0.05, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02,   0.02,  0.02]
-        self.iterations_per_ticks = [  1,    2,    4,   16,   32,   64,  128,   256,   512,  5000]
+        self.iteration_delays     = [0.1, 0.05, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
+        self.iterations_per_ticks = [  1,    2,    4,   16,   32,   64,  128,  256, 1024]
         self.set_timer(self.iteration_delays[self.speed_index])
 
         self.start_cell = None
@@ -42,6 +43,7 @@ class PathfindingGrid(DrawGrid):
         self.cell_color = cell_color
         self.queue = []
         self.explored_cells = {}
+        self.walls = set()
 
         self.algorithm = default_algorithm
 
@@ -100,14 +102,17 @@ class PathfindingGrid(DrawGrid):
             return
 
         if not pressed:
-            if self.get_cell(cell_x, cell_y, return_bg=False):
+            if (cell_x, cell_y) in self.walls:
                 self.draw_delete_mode = True
             else:
                 self.draw_delete_mode = False
 
         if self.draw_delete_mode:
-            self.erase_cell(cell_x, cell_y, animate=True)
-        else:
+            if (cell_x, cell_y) in self.walls:
+                self.walls.remove((cell_x, cell_y))
+                self.erase_cell(cell_x, cell_y, animate=True)
+        elif (cell_x, cell_y) not in self.walls:
+            self.walls.add((cell_x, cell_y))
             self.draw_cell(cell_x, cell_y, self.cell_color, animate=True)
 
     def on_right_mouse(self, cell_x, cell_y):
@@ -178,6 +183,7 @@ class PathfindingGrid(DrawGrid):
         self.explored_cells = {}
 
     def reset(self):
+        self.walls = set()
         self.resetting = False
         self.start_cell = None
         self.end_cell = None
@@ -268,7 +274,7 @@ class PathfindingGrid(DrawGrid):
             self.found_end_cell = True
             return
 
-        if not self.get_cell(*cell, return_bg=False):
+        if cell not in self.walls:
             if self.algorithm == BREADTH_FIRST:
                 # breadth-first does not use a heuristic,
                 # it does first-come-first-serve
