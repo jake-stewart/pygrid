@@ -22,10 +22,10 @@ class PathfindingGrid(DrawGrid):
             background_color=background_color,
             grid_color=grid_color,
             grid_thickness=grid_thickness,
-            animation="grow",
             fps=fps
         )
 
+        self.animation = (0.1, 1)
         # rather than a high speed just having a low delay,
         # it can have a fairly low delay but combined with multiple iterations
         self.speed_index = 3
@@ -110,25 +110,25 @@ class PathfindingGrid(DrawGrid):
         if self.draw_delete_mode:
             if (cell_x, cell_y) in self.walls:
                 self.walls.remove((cell_x, cell_y))
-                self.erase_cell(cell_x, cell_y, animate=True)
+                self.erase_cell(cell_x, cell_y, animation=self.animation)
         elif (cell_x, cell_y) not in self.walls:
             self.walls.add((cell_x, cell_y))
-            self.draw_cell(cell_x, cell_y, self.cell_color, animate=True)
+            self.draw_cell(cell_x, cell_y, self.cell_color, animation=self.animation)
 
     def on_right_mouse(self, cell_x, cell_y):
         if not self.start_cell:
             self.start_cell = (cell_x, cell_y)
-            self.draw_cell(cell_x, cell_y, self.start_color, animate=True)
+            self.draw_cell(cell_x, cell_y, self.start_color, animation=self.animation)
         elif not self.end_cell:
             if self.start_cell == (cell_x, cell_y):
-                self.erase_cell(cell_x, cell_y, animate=True)
+                self.erase_cell(cell_x, cell_y, animation=self.animation)
                 self.start_cell = None
             else:
                 self.end_cell = (cell_x, cell_y)
-                self.draw_cell(cell_x, cell_y, self.end_color, animate=True)
+                self.draw_cell(cell_x, cell_y, self.end_color, animation=self.animation)
         else:
-            self.erase_cell(*self.start_cell, animate=True)
-            self.erase_cell(*self.end_cell, animate=True)
+            self.erase_cell(*self.start_cell, animation=self.animation)
+            self.erase_cell(*self.end_cell, animation=self.animation)
             self.start_cell = None
             self.end_cell = None
 
