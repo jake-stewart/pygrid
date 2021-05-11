@@ -18,7 +18,7 @@ TIMER_ENDING   = 2
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
                  background_color=(255, 255, 255), grid_color=(50, 50, 50),
-                 grid_thickness=1, grid_disappear_size=8, fade_speed=10,
+                 grid_thickness=4, grid_disappear_size=8, fade_speed=10,
                  min_cell_size=4, cell_size=40, max_cell_size=1000,
                  animation_duration=0.1, pan_button=MIDDLE_MOUSE, fps=60,
                  allowed_zoom=True, allowed_pan=True, allowed_resize=True):
