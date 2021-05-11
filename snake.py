@@ -34,7 +34,6 @@ class SnakeGrid(PyGrid):
             allowed_pan=False,
             allowed_zoom=False,
             background_color=background_color,
-            animation_duration=0.3,
             fps=fps
         )
 
@@ -45,6 +44,9 @@ class SnakeGrid(PyGrid):
         self.death_color = death_color
 
         self.food_pos = (0, 0)
+        self.food_animation = (0.3, 1)
+        self.death_animation = (0.1, 1)
+        self.fade_animation = (0.3, 0)
 
         self.animation_delay = 0.5
         self.delay = delay
@@ -70,7 +72,7 @@ class SnakeGrid(PyGrid):
             if (x, y) not in self.tail_hash:
                 break
 
-        self.draw_cell(x, y, self.food_color, animate=True)
+        self.draw_cell(x, y, self.food_color, animation=self.food_animation)
         self.food_cell = (x, y)
 
     def move(self):
@@ -137,7 +139,7 @@ class SnakeGrid(PyGrid):
     def die(self):
         self.set_timer(self.animation_delay)
         self.game_state = DYING
-        self.draw_cell(self.x, self.y, self.death_color, animate=True)
+        self.draw_cell(self.x, self.y, self.death_color, animation=self.death_animation)
 
     def on_timer(self, n_ticks):
         if self.game_state == PLAYING:
@@ -152,8 +154,8 @@ class SnakeGrid(PyGrid):
     def reset(self):
         if self.game_state == DEAD:
             for tail in self.tail_queue:
-                self.draw_cell(*tail, self.background_color, animate=True)
-            self.draw_cell(*self.food_cell, self.background_color, animate=True)
+                self.draw_cell(*tail, self.background_color, animation=self.fade_animation)
+            self.draw_cell(*self.food_cell, self.background_color, animation=self.fade_animation)
 
         self.game_state = RESETTING
         self.chances = self.n_chances
@@ -170,7 +172,7 @@ class SnakeGrid(PyGrid):
             x += 1
             self.tail_queue.append((x, y))
             self.tail_hash.add((x, y))
-            self.draw_cell(x, y, self.snake_color, animate=True)
+            self.draw_cell(x, y, self.snake_color, animation=self.fade_animation)
 
         self.next_direction = None
         self.direction_set = False
