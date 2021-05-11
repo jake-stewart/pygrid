@@ -155,11 +155,8 @@ class GameOfLifeGrid(DrawGrid):
             self.set_timer(self.iteration_delay)
 
         elif key == KEY_DELETE:
-            self.reset()
-
-    def reset(self):
-        self.resetting = True
-        self.stop_timer()
+            self.resetting = True
+            self.stop_timer()
 
     def pause(self):
         self.stop_timer()
