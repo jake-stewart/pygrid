@@ -1130,5 +1130,5 @@ class PyGrid:
             )
 
 if __name__ == "__main__":
-    test_grid = PyGrid(grid_thickness=4)
+    test_grid = PyGrid()
     test_grid.start()
