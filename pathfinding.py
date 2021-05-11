@@ -300,7 +300,7 @@ class PathfindingGrid(DrawGrid):
         l_idx = 0
         r_bound = len(self.queue)
 
-        while r_index < r_bound and self.queue[r_idx][1] < heuristic:
+        while r_idx < r_bound and self.queue[r_idx][1] < heuristic:
             l_idx = r_idx + 1
             r_idx *= 2
 
