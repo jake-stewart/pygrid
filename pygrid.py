@@ -11,18 +11,27 @@ import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
 
+# timer thread status enum
 TIMER_INACTIVE = 0
 TIMER_ACTIVE   = 1
 TIMER_ENDING   = 2
+
+# animation index enum
+ORIGINAL_COLOR = 0
+CURRENT_COLOR = 1
+TARGET_COLOR = 2
+ANIMATION_TYPE = 3
+PROGRESS = 4
+DURATION = 5
+DELETING = 6
 
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
                  background_color=(255, 255, 255), grid_color=(50, 50, 50),
                  grid_thickness=4, grid_disappear_size=8, fade_speed=10,
                  min_cell_size=4, cell_size=40, max_cell_size=1000,
-                 animation_duration=0.1, pan_button=MIDDLE_MOUSE, fps=60,
-                 allowed_zoom=True, allowed_pan=True, allowed_resize=True,
-                 animation="fade"):
+                 pan_button=MIDDLE_MOUSE, fps=60,
+                 allowed_zoom=True, allowed_pan=True, allowed_resize=True):
 
         # grid demensions
         self._n_rows = n_rows
@@ -119,16 +128,11 @@ class PyGrid:
             self._grid_fade_start_size = 0
 
         self._animated_cells = {}
-        self._animation_duration = animation_duration  # seconds
 
-        if animation == "grow":
-            self._animation = self._grow_in_animation
-            self._delete_animation = self._grow_out_animation
-            self._get_animation_color = self._get_grow_animation_color
-        else:
-            self._animation = self._fade_animation
-            self._delete_animation = self._fade_animation
-            self._get_animation_color = self._get_fade_animation_color
+        self._animation_funcs = [
+            [self._fade_animation, self._fade_animation],
+            [self._grow_in_animation, self._grow_out_animation]
+        ]
 
         self._generate_window_size()
         self._calc_offsets()
@@ -408,24 +412,33 @@ class PyGrid:
         except KeyError:
             pass
 
-    def _start_animation(self, cell_x, cell_y, color, deleting=False):
+    def _start_animation(self, cell_x, cell_y, target_color, duration, animation_type=0, erase_on_complete=False):
         current_animation = self._animated_cells.get((cell_x, cell_y), None)
         if current_animation:
-            if current_animation[0] == color:
-                current_animation[0], current_animation[1] = current_animation[1], color
-                current_animation[2] = self._animation_duration - current_animation[2]
-                current_animation[3] = deleting
+            if current_animation[ORIGINAL_COLOR] == target_color:
+                current_animation[ORIGINAL_COLOR], current_animation[TARGET_COLOR] = \
+                    current_animation[TARGET_COLOR], target_color
+                current_animation[PROGRESS] = current_animation[DURATION] - current_animation[PROGRESS]
+                current_animation[DELETING] = erase_on_complete
                 return
-            elif current_animation[1] == color:
+            elif current_animation[TARGET_COLOR] == target_color:
                 return
+
             else:
-                original_color = self._get_animation_color(current_animation)
-                self._animated_cells[(cell_x, cell_y)] = [original_color, color, 0, deleting]
+                original_color = current_animation[CURRENT_COLOR]
+
+                self._animated_cells[(cell_x, cell_y)] = [
+                    original_color, original_color, target_color,
+                    animation_type, 0, duration, erase_on_complete
+                ]
                 return
 
         original_color = self.get_cell(cell_x, cell_y)
-        if original_color != color:
-            self._animated_cells[(cell_x, cell_y)] = [original_color, color, 0, deleting]
+        if original_color != target_color:
+            self._animated_cells[(cell_x, cell_y)] = [
+                    original_color, original_color, target_color,
+                    animation_type, 0, duration, erase_on_complete
+                ]
 
     def _draw_cell_mixed(self, cell_x, cell_y, color, animate=False):
         if threading.current_thread() is self._main_thread:
@@ -433,9 +446,9 @@ class PyGrid:
         else:
             self._draw_cell_threaded(cell_x, cell_y, color)
 
-    def _draw_cell_threadless(self, cell_x, cell_y, color, animate=False):
-        if animate:
-            self._start_animation(cell_x, cell_y, color)
+    def _draw_cell_threadless(self, cell_x, cell_y, color, animation=None):
+        if animation:
+            self._start_animation(cell_x, cell_y, color, *animation)
         else:
             self._end_animation(cell_x, cell_y)
             self._screen_changed = True
@@ -447,18 +460,19 @@ class PyGrid:
         if self._in_render_zone(cell_x, cell_y):
             self._next_draw_queue.append((cell_x, cell_y, color))
 
-    def _erase_cell_mixed(self, cell_x, cell_y, animate=False):
+    def _erase_cell_mixed(self, cell_x, cell_y, animation=None):
         if threading.current_thread() is self._main_thread:
-            self._erase_cell_threadless(cell_x, cell_y, animate)
+            self._erase_cell_threadless(cell_x, cell_y, animation)
         else:
             self._erase_cell_threaded(cell_x, cell_y)
 
-    def _erase_cell_threadless(self, cell_x, cell_y, animate=False):
-        if animate:
+    def _erase_cell_threadless(self, cell_x, cell_y, animation=None):
+        if animation:
             self._start_animation(
                 cell_x, cell_y,
                 self._background_color,
-                deleting=True
+                erase_on_complete=True,
+                *animation
             )
         else:
             self._end_animation(cell_x, cell_y)
@@ -1009,6 +1023,7 @@ class PyGrid:
             self._grid_cell_y,
             (x, y + self._cell_size - self._grid_thickness)
         )
+        return color
 
     def _grow_in_animation(self, cell_x, cell_y, original_color, color, perc):
         x = (cell_x - math.floor(self._pos_x)) * \
@@ -1034,41 +1049,37 @@ class PyGrid:
                 self._grid_cell_y,
                 (x, y + self._cell_size - self._grid_thickness)
             )
-
-    def _get_grow_animation_color(self, animation):
-        return animation[1]
-
-    def _get_fade_animation_color(self, animation):
-        original_color, color, duration, _ = animation
-        perc = min(1, duration / self._animation_duration)
-        return color_mix(original_color, color, perc)
+        return color
 
     def _fade_animation(self, cell_x, cell_y, original_color, color, perc):
         color = color_mix(original_color, color, perc)
         self._draw_cell(cell_x, cell_y, color)
+        return color
 
     def _animate_cells(self, delta):
-        for cell_x, cell_y in tuple(self._animated_cells.keys()):
-            original_color, color, duration, deleting = \
-                self._animated_cells[(cell_x, cell_y)]
+        for (cell_x, cell_y), anim in tuple(self._animated_cells.items()):
+            perc = anim[PROGRESS] / anim[DURATION]
 
-            perc = min(1, duration / self._animation_duration)
+            if perc < 1:
+                anim_type = anim[ANIMATION_TYPE]
 
-            if perc < 1 and duration < self._animation_duration:
-                if deleting:
-                    self._delete_animation(cell_x, cell_y, original_color, color, perc)
-                else:
-                    self._animation(cell_x, cell_y, original_color, color, perc)
-
-                self._animated_cells[(cell_x, cell_y)][2] = duration + delta
+                color = self._animation_funcs[anim[ANIMATION_TYPE]][anim[DELETING]](
+                    cell_x, cell_y,
+                    anim[ORIGINAL_COLOR],
+                    anim[TARGET_COLOR],
+                    perc
+                )
+                anim[PROGRESS] = anim[PROGRESS] + delta
+                anim[CURRENT_COLOR] = color
 
             else:
                 del self._animated_cells[(cell_x, cell_y)]
-                self._draw_cell(cell_x, cell_y, color)
-                if deleting:
+                self._draw_cell(cell_x, cell_y, anim[TARGET_COLOR])
+                if anim[DELETING]:
                     self._delete_cell(cell_x, cell_y)
                 else:
-                    self._add_cell(cell_x, cell_y, color)
+                    self._add_cell(cell_x, cell_y, anim[TARGET_COLOR])
+
         self._screen_changed = True
 
     def _calc_n_rows(self):
