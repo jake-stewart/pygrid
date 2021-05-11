@@ -3,7 +3,7 @@ from utils import hex2rgb
 one_dark_theme = {
     "background_color": hex2rgb("#282C34"),
     "cell_color":       hex2rgb("#ABB2BF"),
-    "grid_color":       hex2rgb("#5C6370"),
+    "grid_color":       hex2rgb("#474D58"),
     "red":              hex2rgb("#E06C75"),
     "green":            hex2rgb("#98C379"),
     "blue":             hex2rgb("#61AFEF"),
@@ -13,53 +13,53 @@ one_dark_theme = {
 }
 
 boring_theme = {
-    "background_color": hex2rgb("#ffffff"),
+    "background_color": hex2rgb("#FFFFFF"),
     "cell_color":       hex2rgb("#000000"),
     "grid_color":       hex2rgb("#888888"),
-    "red":              hex2rgb("#ff0000"),
-    "green":            hex2rgb("#00ff00"),
-    "blue":             hex2rgb("#0000ff"),
-    "yellow":           hex2rgb("#ffff00"),
-    "magenta":          hex2rgb("#ff00ff"),
-    "cyan":             hex2rgb("#00ffff"),
+    "red":              hex2rgb("#FF0000"),
+    "green":            hex2rgb("#00FF00"),
+    "blue":             hex2rgb("#0000FF"),
+    "yellow":           hex2rgb("#FFFF00"),
+    "magenta":          hex2rgb("#FF00FF"),
+    "cyan":             hex2rgb("#00FFFF"),
 }
 
 gruvbox_dark_theme = {
     "background_color": hex2rgb("#282828"),
-    "cell_color":       hex2rgb("#ebdbb2"),
-    "grid_color":       hex2rgb("#928374"),
-    "red":              hex2rgb("#fb4934"),
-    "green":            hex2rgb("#b8bb26"),
-    "blue":             hex2rgb("#83a598"),
-    "yellow":           hex2rgb("#fabd2f"),
-    "magenta":          hex2rgb("#d3859b"),
-    "cyan":             hex2rgb("#83a598"),
+    "cell_color":       hex2rgb("#EBDBB2"),
+    "grid_color":       hex2rgb("#625A52"),
+    "red":              hex2rgb("#FB4934"),
+    "green":            hex2rgb("#B8BB26"),
+    "blue":             hex2rgb("#83A598"),
+    "yellow":           hex2rgb("#FABD2F"),
+    "magenta":          hex2rgb("#D3859B"),
+    "cyan":             hex2rgb("#83A598"),
 }
 
 gruvbox_light_theme = {
-    "background_color": hex2rgb("#fbf1c7"),
-    "cell_color":       hex2rgb("#3c3836"),
+    "background_color": hex2rgb("#FBF1C7"),
+    "cell_color":       hex2rgb("#3C3836"),
     "grid_color":       hex2rgb("#928374"),
-    "red":              hex2rgb("#cc241d"),
-    "green":            hex2rgb("#98971a"),
+    "red":              hex2rgb("#CC241D"),
+    "green":            hex2rgb("#98971A"),
     "blue":             hex2rgb("#458588"),
-    "yellow":           hex2rgb("#d79921"),
-    "magenta":          hex2rgb("#b16286"),
-    "cyan":             hex2rgb("#689d6a"),
+    "yellow":           hex2rgb("#D79921"),
+    "magenta":          hex2rgb("#B16286"),
+    "cyan":             hex2rgb("#689D6A"),
 }
 
 solarized_dark_theme = {
-    "background_color": hex2rgb("#002b36"),
-    "cell_color":       hex2rgb("#eee8d5"),
-    "grid_color":       hex2rgb("#586e75"),
-    "red":              hex2rgb("#dc322f"),
+    "background_color": hex2rgb("#002B36"),
+    "cell_color":       hex2rgb("#EEE8D5"),
+    "grid_color":       hex2rgb("#39575F"),
+    "red":              hex2rgb("#DC322F"),
     "green":            hex2rgb("#859900"),
-    "blue":             hex2rgb("#268bd2"),
-    "yellow":           hex2rgb("#b58900"),
-    "magenta":          hex2rgb("#6c71c4"),
-    "cyan":             hex2rgb("#2aa198"),
+    "blue":             hex2rgb("#268BD2"),
+    "yellow":           hex2rgb("#B58900"),
+    "magenta":          hex2rgb("#6C71C4"),
+    "cyan":             hex2rgb("#2AA198"),
 }
 
 config = one_dark_theme
 config["fps"] = 60
-config["grid_thickness"] = 1
+config["grid_thickness"] = 3
