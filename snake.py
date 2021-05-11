@@ -34,7 +34,7 @@ class SnakeGrid(PyGrid):
             allowed_pan=False,
             allowed_zoom=False,
             background_color=background_color,
-            animation_duration=0.1,
+            animation_duration=0.3,
             fps=fps
         )
 
