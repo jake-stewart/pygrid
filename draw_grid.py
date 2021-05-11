@@ -17,6 +17,7 @@ class DrawGrid(PyGrid):
             self._draw_buttons = draw_buttons
 
         self._origin = None
+        self._fill_x = True
         self._button_down = None
 
     # when inheriting this class, use this method for all mouse events
