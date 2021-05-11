@@ -18,11 +18,10 @@ TIMER_ENDING   = 2
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
                  background_color=(255, 255, 255), grid_color=(50, 50, 50),
-                 grid_thickness=1, grid_disappear_size=8,
+                 grid_thickness=1, grid_disappear_size=8, fade_speed=10,
                  min_cell_size=4, cell_size=40, max_cell_size=1000,
                  animation_duration=0.1, pan_button=MIDDLE_MOUSE, fps=60,
-                 allowed_zoom=True, allowed_pan=True, allowed_resize=True,
-                 fade_speed=10):
+                 allowed_zoom=True, allowed_pan=True, allowed_resize=True):
 
         # grid demensions
         self._n_rows = n_rows
@@ -1046,20 +1045,18 @@ class PyGrid:
                 self.on_mouse_motion(*cell)
 
     def _generate_fade_steps(self, fade_speed):
-        alpha = 255
+        alpha = 255 - fade_speed
         grid_thickness = self._grid_thickness
         self._fade_alphas = []
         self._fade_grid_thicknesses = []
-        while True:
-            alpha -= fade_speed
-            if alpha <= 0:
-                break
+        while alpha > 0:
             new_grid_thickness = max(1, math.ceil((alpha / 255) * self._default_grid_thickness))
             if new_grid_thickness < grid_thickness:
                 alpha = min(255, alpha + int(alpha * (1 - (new_grid_thickness / grid_thickness))))
                 grid_thickness = new_grid_thickness
             self._fade_grid_thicknesses.append(grid_thickness)
             self._fade_alphas.append(alpha)
+            alpha -= fade_speed
 
         self._grid_fade_start_size = self._grid_disappear_size + len(self._fade_alphas)
 
