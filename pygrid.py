@@ -18,10 +18,11 @@ TIMER_ENDING   = 2
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
                  background_color=(255, 255, 255), grid_color=(50, 50, 50),
-                 grid_thickness=1, grid_disappear_size=5, n_grid_fade_steps=25,
+                 grid_thickness=1, grid_disappear_size=8,
                  min_cell_size=4, cell_size=40, max_cell_size=1000,
                  animation_duration=0.1, pan_button=MIDDLE_MOUSE, fps=60,
-                 allowed_zoom=True, allowed_pan=True, allowed_resize=True):
+                 allowed_zoom=True, allowed_pan=True, allowed_resize=True,
+                 fade_speed=10):
 
         # grid demensions
         self._n_rows = n_rows
@@ -112,12 +113,10 @@ class PyGrid:
         # when cells are below this size, the grid will no longer be drawn
         self._grid_disappear_size = grid_disappear_size
 
-        # the number of steps between zero and full grid opacity
-        self._n_grid_fade_steps = n_grid_fade_steps
-
-        # when cells are below this size,
-        # the grid color and thickness will begin to fade
-        self._grid_fade_start_size = grid_disappear_size + n_grid_fade_steps
+        if grid_thickness and fade_speed > 0:
+            self._generate_fade_steps(fade_speed)
+        else:
+            self._grid_fade_start_size = 0
 
         self._animated_cells = {}
         self._animation_duration = animation_duration  # seconds
@@ -1046,6 +1045,24 @@ class PyGrid:
                 self._last_cell = cell
                 self.on_mouse_motion(*cell)
 
+    def _generate_fade_steps(self, fade_speed):
+        alpha = 255
+        grid_thickness = self._grid_thickness
+        self._fade_alphas = []
+        self._fade_grid_thicknesses = []
+        while True:
+            alpha -= fade_speed
+            if alpha <= 0:
+                break
+            new_grid_thickness = max(1, math.ceil((alpha / 255) * self._default_grid_thickness))
+            if new_grid_thickness < grid_thickness:
+                alpha = min(255, alpha + int(alpha * (1 - (new_grid_thickness / grid_thickness))))
+                grid_thickness = new_grid_thickness
+            self._fade_grid_thicknesses.append(grid_thickness)
+            self._fade_alphas.append(alpha)
+
+        self._grid_fade_start_size = self._grid_disappear_size + len(self._fade_alphas)
+
     def _apply_grid_effects(self):
         # when cells get smaller than a certain point, the grid disappears.
         # if this is the case, return since grids don't need to be made
@@ -1056,12 +1073,8 @@ class PyGrid:
         # otherwise if the cells are smaller than another point, the grid will fade out
         elif self._cell_size <= self._grid_fade_start_size:
             fade_index = self._grid_fade_start_size - self._cell_size
-            self._grid_alpha = 255 - int(fade_index / self._n_grid_fade_steps * 255)
-            self._grid_thickness = math.ceil(
-                self._default_grid_thickness * (
-                    (self._n_grid_fade_steps - fade_index) / self._n_grid_fade_steps
-                )
-            )
+            self._grid_alpha = self._fade_alphas[fade_index]
+            self._grid_thickness = self._fade_grid_thicknesses[fade_index]
 
         else:
             self._grid_alpha = 255
@@ -1120,5 +1133,5 @@ class PyGrid:
             )
 
 if __name__ == "__main__":
-    test_grid = PyGrid()
+    test_grid = PyGrid(grid_thickness=4)
     test_grid.start()
