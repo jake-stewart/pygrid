@@ -11,10 +11,10 @@ class GameOfLifeGrid(DrawGrid):
             background_color=background_color,
             grid_color=grid_color,
             grid_thickness=grid_thickness,
-            animation="grow",
             fps=fps
         )
 
+        self.animation = (0.2, 1)
         self.paused = True
         self.resetting = False
         self.cell_color = cell_color
@@ -60,12 +60,12 @@ class GameOfLifeGrid(DrawGrid):
 
         if button == LEFT_MOUSE:
             if (cell_x, cell_y) not in self.alive_cells:
-                self.draw_cell(cell_x, cell_y, self.cell_color, animate=True)
+                self.draw_cell(cell_x, cell_y, self.cell_color, animation=self.animation)
                 self.add_cell(cell_x, cell_y)
 
         elif button == RIGHT_MOUSE:
             if (cell_x, cell_y) in self.alive_cells:
-                self.erase_cell(cell_x, cell_y, animate=True)
+                self.erase_cell(cell_x, cell_y, animation=self.animation)
                 self.delete_cell(cell_x, cell_y)
 
     def do_iteration(self):
