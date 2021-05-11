@@ -34,7 +34,6 @@ class TetrisGrid(PyGrid):
                  bottom_padding=1, min_hold_time=5, ticks_per_drop=15, tick_speed=0.05,
                  animate=True, fancy_drop=True):
 
-        self.red = red
         if animate:
             self.normal_animation = (0.1, 0)
             self.swap_animation = (0.2, 1)
@@ -51,6 +50,7 @@ class TetrisGrid(PyGrid):
 
         self.dropping = False
 
+        self.color_red = red
         self.cell_color = cell_color
         self.score = 0
         self.difficulty = 0
@@ -382,7 +382,7 @@ class TetrisGrid(PyGrid):
                 self.tens_glyph = NO_GLYPH
                 self.hundreds_glyph = NO_GLYPH
                 self.erase_score()
-                self.draw_screen(self.red)
+                self.draw_screen(self.color_red)
                 self.stop_timer()
                 return
 
