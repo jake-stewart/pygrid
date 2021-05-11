@@ -7,7 +7,7 @@ class GameOfLifeGrid(DrawGrid):
     def __init__(self, background_color, grid_color, cell_color, grid_thickness, fps):
         DrawGrid.__init__(
             self,
-            [LEFT_MOUSE, RIGHT_MOUSE],
+            draw_buttons=(LEFT_MOUSE, RIGHT_MOUSE),
             background_color=background_color,
             grid_color=grid_color,
             grid_thickness=grid_thickness,
