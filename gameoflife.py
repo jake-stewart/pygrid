@@ -11,6 +11,7 @@ class GameOfLifeGrid(DrawGrid):
             background_color=background_color,
             grid_color=grid_color,
             grid_thickness=grid_thickness,
+            animation="grow",
             fps=fps
         )
 
