@@ -25,7 +25,7 @@ class PathfindingGrid(DrawGrid):
             fps=fps
         )
 
-        self.animation = (0.1, 1)
+        self.animation = (0.15, 1)
         # rather than a high speed just having a low delay,
         # it can have a fairly low delay but combined with multiple iterations
         self.speed_index = 3
