@@ -14,7 +14,7 @@ class GameOfLifeGrid(DrawGrid):
             fps=fps
         )
 
-        self.animation = (0.2, 1)
+        self.animation = (0.15, 1)
         self.paused = True
         self.resetting = False
         self.cell_color = cell_color
