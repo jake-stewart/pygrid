@@ -27,7 +27,7 @@ boring_theme = {
 gruvbox_dark_theme = {
     "background_color": hex2rgb("#282828"),
     "cell_color":       hex2rgb("#EBDBB2"),
-    "grid_color":       hex2rgb("#625A52"),
+    "grid_color":       hex2rgb("#45413D"),
     "red":              hex2rgb("#FB4934"),
     "green":            hex2rgb("#B8BB26"),
     "blue":             hex2rgb("#83A598"),
@@ -39,7 +39,7 @@ gruvbox_dark_theme = {
 gruvbox_light_theme = {
     "background_color": hex2rgb("#FBF1C7"),
     "cell_color":       hex2rgb("#3C3836"),
-    "grid_color":       hex2rgb("#928374"),
+    "grid_color":       hex2rgb("#C6BA9D"),
     "red":              hex2rgb("#CC241D"),
     "green":            hex2rgb("#98971A"),
     "blue":             hex2rgb("#458588"),
@@ -51,7 +51,7 @@ gruvbox_light_theme = {
 solarized_dark_theme = {
     "background_color": hex2rgb("#002B36"),
     "cell_color":       hex2rgb("#EEE8D5"),
-    "grid_color":       hex2rgb("#39575F"),
+    "grid_color":       hex2rgb("#1C414A"),
     "red":              hex2rgb("#DC322F"),
     "green":            hex2rgb("#859900"),
     "blue":             hex2rgb("#268BD2"),
