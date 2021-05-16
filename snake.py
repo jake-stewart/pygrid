@@ -19,7 +19,7 @@ RESETTING = 5
 
 class SnakeGrid(PyGrid):
     def __init__(self, width=16, height=16, start_length=4, delay=0.05, n_chances=5,
-                 growth_rate=5, cell_size=45, grid_thickness=0, grid_color = (50, 50, 50),
+                 growth_rate=5, cell_size=45, grid_percentage=0, grid_color = (50, 50, 50),
                  background_color=(255, 255, 255), snake_color=(0, 255, 0),
                  food_color=(255, 0, 0), death_color=(0, 0, 255), fps=60):
 
@@ -28,7 +28,7 @@ class SnakeGrid(PyGrid):
             n_columns=width,
             n_rows=height,
             cell_size=cell_size,
-            grid_thickness=grid_thickness,
+            grid_percentage=grid_percentage,
             grid_color=grid_color,
             allowed_resize=False,
             allowed_pan=False,
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     grid = SnakeGrid(
         background_color = config["background_color"],
         grid_color       = config["grid_color"],
-        grid_thickness   = config["grid_thickness"],
+        grid_percentage  = config["grid_percentage"],
         snake_color      = config["green"],
         food_color       = config["blue"],
         death_color      = config["red"],
