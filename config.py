@@ -62,4 +62,4 @@ solarized_dark_theme = {
 
 config = one_dark_theme
 config["fps"] = 60
-config["grid_thickness"] = 3
+config["grid_percentage"] = 0.1
