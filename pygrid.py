@@ -28,7 +28,7 @@ DELETING = 6
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
                  background_color=(255, 255, 255), grid_color=(50, 50, 50),
-                 grid_thickness=4, grid_disappear_size=8, fade_speed=10,
+                 grid_fade_start=40, grid_fade_end=8, grid_percentage=0.1,
                  min_cell_size=4, cell_size=40, max_cell_size=1000,
                  pan_button=MIDDLE_MOUSE, fps=60,
                  allowed_zoom=True, allowed_pan=True, allowed_resize=True):
@@ -115,17 +115,13 @@ class PyGrid:
         self._rows = defaultdict(lambda: defaultdict(dict))
         self._columns = defaultdict(lambda: defaultdict(dict))
 
-        # width of the grid lines. this value may shrink when zooming out
-        self._default_grid_thickness = grid_thickness
-        self._grid_thickness = grid_thickness
 
-        # when cells are below this size, the grid will no longer be drawn
-        self._grid_disappear_size = grid_disappear_size
-
-        if grid_thickness and fade_speed > 0:
-            self._generate_fade_steps(fade_speed)
-        else:
-            self._grid_fade_start_size = 0
+        # what percentage of a cell should be designated for the grid lines?
+        self._grid_percentage = grid_percentage
+        # what cell size does grid start to fade away?
+        self._grid_fade_start = grid_fade_start
+        # what cell size does grid disappear at?
+        self._grid_fade_end = grid_fade_end
 
         self._animated_cells = {}
 
@@ -362,8 +358,10 @@ class PyGrid:
 
         # if a number of rows and columns are used, calculate window size to fit
         elif self._n_rows and self._n_columns:
-            self._width = self._n_columns * self._cell_size - self._grid_thickness
-            self._height = self._n_rows * self._cell_size - self._grid_thickness
+            self._width = self._n_columns * self._cell_size - \
+                int(self._grid_percentage * self._cell_size)
+            self._height = self._n_rows * self._cell_size - \
+                int(self._grid_percentage * self._cell_size)
 
         # otherwise, use 800x600
         else:
@@ -1151,39 +1149,26 @@ class PyGrid:
                 self._last_cell = cell
                 self.on_mouse_motion(*cell)
 
-    def _generate_fade_steps(self, fade_speed):
-        alpha = 255 - fade_speed
-        grid_thickness = self._grid_thickness
-        self._fade_alphas = []
-        self._fade_grid_thicknesses = []
-        while alpha > 0:
-            new_grid_thickness = max(1, math.ceil((alpha / 255) * self._default_grid_thickness))
-            if new_grid_thickness < grid_thickness:
-                alpha = min(255, alpha + int(alpha * (1 - (new_grid_thickness / grid_thickness))))
-                grid_thickness = new_grid_thickness
-            self._fade_grid_thicknesses.append(grid_thickness)
-            self._fade_alphas.append(alpha)
-            alpha -= fade_speed
-
-        self._grid_fade_start_size = self._grid_disappear_size + len(self._fade_alphas)
-
     def _apply_grid_effects(self):
-        # when cells get smaller than a certain point, the grid disappears.
-        # if this is the case, return since grids don't need to be made
-        if self._cell_size <= self._grid_disappear_size:
+        if not self._grid_percentage or self._cell_size <= self._grid_fade_end:
             self._grid_thickness = 0
-            return
 
-        # otherwise if the cells are smaller than another point, the grid will fade out
-        elif self._cell_size <= self._grid_fade_start_size:
-            fade_index = self._grid_fade_start_size - self._cell_size
-            self._grid_alpha = self._fade_alphas[fade_index]
-            self._grid_thickness = self._fade_grid_thicknesses[fade_index]
+        elif self._cell_size <= self._grid_fade_start:
+            self._grid_thickness = int(self._cell_size * self._grid_percentage)
+
+            progress = (self._cell_size - self._grid_fade_start) / (
+                self._grid_fade_end - self._grid_fade_start
+            )
+
+            smooth_amount = 1 + (
+                1 - (self._grid_thickness / self._cell_size / self._grid_percentage)
+            )
+
+            self._grid_alpha = (255 - progress * 255) * smooth_amount 
 
         else:
+            self._grid_thickness = int(self._cell_size * self._grid_percentage)
             self._grid_alpha = 255
-            self._grid_thickness = self._default_grid_thickness
-
 
     def _create_grid_lines(self):
         # vertical cell-sized grid line used for individual cell placement
