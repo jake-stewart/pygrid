@@ -1159,11 +1159,9 @@ class PyGrid:
             progress = (self._cell_size - self._grid_fade_start) / (
                 self._grid_fade_end - self._grid_fade_start
             )
-
             smooth_amount = 1 + (
                 1 - (self._grid_thickness / self._cell_size / self._grid_percentage)
             )
-
             self._grid_alpha = (255 - progress * 255) * smooth_amount 
 
         else:
