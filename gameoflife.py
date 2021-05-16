@@ -4,13 +4,13 @@ from keycodes import *
 
 
 class GameOfLifeGrid(DrawGrid):
-    def __init__(self, background_color, grid_color, cell_color, grid_thickness, fps):
+    def __init__(self, background_color, grid_color, cell_color, grid_percentage, fps):
         DrawGrid.__init__(
             self,
             draw_buttons=(LEFT_MOUSE, RIGHT_MOUSE),
             background_color=background_color,
             grid_color=grid_color,
-            grid_thickness=grid_thickness,
+            grid_percentage=grid_percentage,
             fps=fps
         )
 
@@ -156,8 +156,11 @@ class GameOfLifeGrid(DrawGrid):
             self.set_timer(self.iteration_delay)
 
         elif key == KEY_DELETE:
-            self.resetting = True
-            self.stop_timer()
+            if self.paused:
+                self.reset()
+            else:
+                self.resetting = True
+                self.stop_timer()
 
     def pause(self):
         self.stop_timer()
@@ -173,7 +176,7 @@ if __name__ == "__main__":
         background_color = config["background_color"],
         cell_color       = config["cell_color"],
         grid_color       = config["grid_color"],
-        grid_thickness   = config["grid_thickness"],
+        grid_percentage  = config["grid_percentage"],
         fps              = config["fps"]
     )
     grid.start()
