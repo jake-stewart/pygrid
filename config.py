@@ -3,7 +3,7 @@ from utils import hex2rgb
 one_dark_theme = {
     "background_color": hex2rgb("#282C34"),
     "cell_color":       hex2rgb("#ABB2BF"),
-    "grid_color":       hex2rgb("#474D58"),
+    "grid_color":       hex2rgb("#383C46"),
     "red":              hex2rgb("#E06C75"),
     "green":            hex2rgb("#98C379"),
     "blue":             hex2rgb("#61AFEF"),
