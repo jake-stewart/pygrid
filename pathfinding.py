@@ -11,7 +11,7 @@ class PathfindingGrid(DrawGrid):
 
     def __init__(
             self, background_color, grid_color, cell_color, trace_color,
-            start_color, end_color, scan_color, scanned_color, grid_thickness,
+            start_color, end_color, scan_color, scanned_color, grid_percentage,
             fps, default_algorithm=A_STAR):
 
         DrawGrid.__init__(
@@ -21,7 +21,7 @@ class PathfindingGrid(DrawGrid):
             cell_size=20,
             background_color=background_color,
             grid_color=grid_color,
-            grid_thickness=grid_thickness,
+            grid_percentage=grid_percentage,
             fps=fps
         )
 
@@ -371,7 +371,7 @@ if __name__ == "__main__":
         end_color        = config["green"],
         scanned_color    = light_yellow,
         scan_color       = light_orange,
-        grid_thickness   = config["grid_thickness"],
+        grid_percentage  = config["grid_percentage"],
         fps              = config["fps"]
     )
         
