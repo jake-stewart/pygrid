@@ -581,12 +581,12 @@ class PyGrid:
         y = -self._top_offset - self._grid_thickness + self._grid_thickness // 2
 
         # draw grid rows
-        for row in range(self._n_rows):
+        for row in range(self._n_rows + 1):
             self._screen.blit(self._grid_row, (-self._left_offset, y))
             y += self._cell_size
 
         # draw grid columns
-        for column in range(self._n_columns):
+        for column in range(self._n_columns + 1):
             self._screen.blit(self._grid_column, (x, 0))
             x += self._cell_size
 
@@ -1246,7 +1246,7 @@ class PyGrid:
         # this dot will be transparent when the grid line is blitted
         # this avoids rows and columns grid lines overlapping
         # TODO more efficient
-        for column in range(n_columns + 1):
+        for column in range(n_columns):
             rect = (
                 column * self._cell_size - self._grid_thickness + self._grid_thickness // 2,
                 0, self._grid_thickness, self._grid_thickness
