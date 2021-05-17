@@ -524,20 +524,12 @@ class PyGrid:
                 if not chunk:
                     continue
 
-                while True:
-                    try:
-                        for column_n, cell in chunk.items():
-                            self._draw_cell(
-                                column_n, row_n,
-                                cell,
-                                draw_grid=False
-                            )
-                        break
-
-                    # if the chunk changes during the iteration, redraw that chunk
-                    # this allows for drawing to occur on another thread
-                    except RuntimeError:
-                        pass
+                for column_n, cell in chunk.items():
+                    self._draw_cell(
+                        column_n, row_n,
+                        cell,
+                        draw_grid=False
+                    )
 
     def _draw_columns_cells(self, column_start, column_span):
         self._clear_region(
@@ -561,17 +553,11 @@ class PyGrid:
                 if not chunk:
                     continue
 
-                while True:
-                    try:
-                        for row_n, cell in chunk.items():
-                            self._draw_cell(
-                                column_n, row_n,
-                                cell, draw_grid=False
-                            )
-                        break
-
-                    except RuntimeError:
-                        pass
+                for row_n, cell in chunk.items():
+                    self._draw_cell(
+                        column_n, row_n,
+                        cell, draw_grid=False
+                    )
 
     def _draw_grid(self):
         if not self._grid_thickness:
