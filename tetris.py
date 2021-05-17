@@ -126,11 +126,10 @@ class TetrisGrid(PyGrid):
             grid_color=grid_color,
             grid_percentage=grid_percentage,
             allowed_resize=False,
-            allowed_pan=False,
-            allowed_zoom=False,
+            allowed_pan=True,
+            allowed_zoom=True,
             background_color=background_color,
-            fps=fps,
-            default_grid_alpha=100
+            fps=fps
         )
 
         self.drop_tick_speed = 0.01
