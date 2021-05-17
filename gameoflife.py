@@ -10,7 +10,7 @@ class GameOfLifeGrid(DrawGrid):
             draw_buttons=(LEFT_MOUSE, RIGHT_MOUSE),
             background_color=background_color,
             grid_color=grid_color,
-            grid_percentage=0.3,
+            grid_percentage=grid_percentage,
             fps=fps
         )
 
