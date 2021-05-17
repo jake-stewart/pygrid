@@ -28,9 +28,9 @@ DELETING = 6
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
                  background_color=(255, 255, 255), grid_color=(50, 50, 50),
-                 grid_fade_start=30, grid_fade_end=8, grid_percentage=0.1,
+                 grid_fade_start=100, grid_fade_end=8, grid_percentage=0.1,
                  min_cell_size=4, cell_size=40, max_cell_size=1000,
-                 pan_button=MIDDLE_MOUSE, fps=60,
+                 pan_button=MIDDLE_MOUSE, fps=60, default_grid_alpha=255,
                  allowed_zoom=True, allowed_pan=True, allowed_resize=True):
 
         # grid demensions
@@ -65,7 +65,7 @@ class PyGrid:
         self._background_color = background_color
         self._grid_color = grid_color
         self._grid_alpha = 255
-        self._grid_default_alpha = 255
+        self._grid_default_alpha = default_grid_alpha
         self._color_key = (255, 0, 255)
 
         # mouse events are handled once per frame
