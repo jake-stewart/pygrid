@@ -65,6 +65,7 @@ class PyGrid:
         self._background_color = background_color
         self._grid_color = grid_color
         self._grid_alpha = 255
+        self._grid_default_alpha = 150
         self._color_key = (255, 0, 255)
 
         # mouse events are handled once per frame
@@ -389,15 +390,7 @@ class PyGrid:
         )
 
         if draw_grid and self._grid_thickness:
-            self._screen.blit(
-                self._grid_cell_x,
-                (x + self._cell_size - self._grid_thickness, y)
-            )
-
-            self._screen.blit(
-                self._grid_cell_y,
-                (x, y + self._cell_size - self._grid_thickness)
-            )
+            self._screen.blit(self._cell_borders, (x, y))
 
     def _add_cell(self, cell_x, cell_y, color):
         chunk_x, chunk_y = self._get_chunk(cell_x, cell_y)
@@ -416,7 +409,9 @@ class PyGrid:
             if current_animation[ORIGINAL_COLOR] == target_color:
                 current_animation[ORIGINAL_COLOR], current_animation[TARGET_COLOR] = \
                     current_animation[TARGET_COLOR], target_color
-                current_animation[PROGRESS] = current_animation[DURATION] - current_animation[PROGRESS]
+                perc = max(0, 1 - current_animation[PROGRESS] / current_animation[DURATION])
+                current_animation[PROGRESS] = duration * perc
+                current_animation[DURATION] = duration
                 current_animation[DELETING] = erase_on_complete
                 return
             elif current_animation[TARGET_COLOR] == target_color:
@@ -580,8 +575,8 @@ class PyGrid:
         if not self._grid_thickness:
             return
 
-        x = self._cell_size - self._left_offset - self._grid_thickness
-        y = self._cell_size - self._top_offset - self._grid_thickness
+        x = self._cell_size - self._left_offset - self._grid_thickness + self._grid_thickness // 2
+        y = self._cell_size - self._top_offset - self._grid_thickness + self._grid_thickness // 2
 
         # draw grid rows
         for row in range(self._n_rows):
@@ -848,13 +843,30 @@ class PyGrid:
         self._screen_changed = True
 
     def _draw_columns_grids(self, column_start, column_span):
-        x = -self._left_offset + column_start * self._cell_size + self._cell_size - self._grid_thickness
+        x = -self._left_offset + column_start * self._cell_size
         for column in range(column_start, column_start + column_span):
             self._screen.blit(
-                self._grid_column,
+                self._grid_column_left,
                 (x, -self._top_offset)
             )
+            self._screen.blit(
+                self._grid_column_right,
+                (x + self._grid_offset, -self._top_offset)
+            )
             x += self._cell_size
+
+    def _draw_rows_grids(self, row_start, row_span):
+        y = -self._top_offset + row_start * self._cell_size
+        for row in range(row_start, row_start + row_span):
+            self._screen.blit(
+                self._grid_row_top,
+                (-self._left_offset, y)
+            )
+            self._screen.blit(
+                self._grid_row_bottom,
+                (-self._left_offset, y + self._grid_offset)
+            )
+            y += self._cell_size
 
     def _draw_partial_columns_grids(self, column_start, column_span,
                                    row_start, row_span):
@@ -866,34 +878,33 @@ class PyGrid:
                 - (self._cell_size - self._bottom_offset)
 
 
-        x = -self._left_offset + self._cell_size - self._grid_thickness
+        x = -self._left_offset
 
         for column in range(self._n_columns):
             if column_start <= column < column_start + column_span:
                 self._screen.blit(
-                    self._grid_column,
+                    self._grid_column_left,
                     (x, -self._top_offset)
+                )
+                self._screen.blit(
+                    self._grid_column_right,
+                    (x + self._grid_offset, -self._top_offset)
                 )
             else:
                 self._screen.blit(
-                    self._grid_column,
+                    self._grid_column_left,
                     (x, grid_offset)
+                )
+                self._screen.blit(
+                    self._grid_column_right,
+                    (x + self._grid_offset, grid_offset)
                 )
 
             x += self._cell_size
 
-    def _draw_rows_grids(self, row_start, row_span):
-        y = -self._top_offset + row_start * self._cell_size \
-            + self._cell_size - self._grid_thickness
-        for row in range(row_start, row_start + row_span):
-            self._screen.blit(
-                self._grid_row,
-                (-self._left_offset, y)
-            )
-            y += self._cell_size
-
     def _draw_partial_rows_grids(self, row_start, row_span,
                                 column_start, column_span):
+        # prob
         if column_start == 0:
             grid_offset = -self._row_grid_length + column_span \
                 * self._cell_size - self._left_offset
@@ -902,18 +913,26 @@ class PyGrid:
                 - (self._cell_size - self._right_offset)
 
 
-        y = -self._top_offset + self._cell_size - self._grid_thickness
+        y = -self._top_offset
 
         for row in range(self._n_rows):
             if row_start <= row < row_start + row_span:
                 self._screen.blit(
-                    self._grid_row,
+                    self._grid_row_top,
                     (-self._left_offset, y)
+                )
+                self._screen.blit(
+                    self._grid_row_bottom,
+                    (-self._left_offset, y + self._cell_size - (self._grid_thickness - self._grid_thickness // 2))
                 )
             else:
                 self._screen.blit(
-                    self._grid_row,
+                    self._grid_row_top,
                     (grid_offset, y)
+                )
+                self._screen.blit(
+                    self._grid_row_bottom,
+                    (grid_offset, y + self._cell_size - (self._grid_thickness - self._grid_thickness // 2))
                 )
 
             y += self._cell_size
@@ -1000,27 +1019,21 @@ class PyGrid:
         y = (cell_y - math.floor(self._pos_y)) * \
             self._cell_size - self._top_offset
 
-        size = int(self._cell_size * perc) // 2
+        size = int(self._cell_size * (1 - perc))
         offset = (self._cell_size - size) // 2 
 
-        rects = (
-            (x, y, size, self._cell_size),
-            (x, y, self._cell_size, size),
-            (x + self._cell_size - size, y, size, self._cell_size),
-            (x, y + self._cell_size - size, self._cell_size, size)
+        pygame.draw.rect(
+            self._screen,
+            color,
+            (x, y, self._cell_size, self._cell_size)
         )
-        for rect in rects:
-            pygame.draw.rect(self._screen, color, rect)
-
-        self._screen.blit(
-            self._grid_cell_x,
-            (x + self._cell_size - self._grid_thickness, y)
+        pygame.draw.rect(
+            self._screen,
+            original_color,
+            (x + offset, y + offset, size, size)
         )
 
-        self._screen.blit(
-            self._grid_cell_y,
-            (x, y + self._cell_size - self._grid_thickness)
-        )
+        self._screen.blit(self._cell_borders, (x, y))
         return color
 
     def _grow_in_animation(self, cell_x, cell_y, original_color, color, perc):
@@ -1028,6 +1041,12 @@ class PyGrid:
             self._cell_size - self._left_offset
         y = (cell_y - math.floor(self._pos_y)) * \
             self._cell_size - self._top_offset
+
+        pygame.draw.rect(
+            self._screen,
+            original_color,
+            (x, y, self._cell_size, self._cell_size)
+        )
 
         size = int(self._cell_size * perc)
         offset = (self._cell_size - size) // 2 
@@ -1037,16 +1056,7 @@ class PyGrid:
             (x + offset, y + offset, size, size)
         )
 
-        if self._cell_size - size < self._grid_thickness:
-            self._screen.blit(
-                self._grid_cell_x,
-                (x + self._cell_size - self._grid_thickness, y)
-            )
-
-            self._screen.blit(
-                self._grid_cell_y,
-                (x, y + self._cell_size - self._grid_thickness)
-            )
+        self._screen.blit(self._cell_borders, (x, y))
         return color
 
     def _fade_animation(self, cell_x, cell_y, original_color, color, perc):
@@ -1162,61 +1172,94 @@ class PyGrid:
             smooth_amount = 1 + (
                 1 - (self._grid_thickness / self._cell_size / self._grid_percentage)
             )
-            self._grid_alpha = (255 - progress * 255) * smooth_amount 
+            self._grid_alpha = (self._grid_default_alpha - progress * self._grid_default_alpha) * smooth_amount 
 
         else:
             self._grid_thickness = int(self._cell_size * self._grid_percentage)
-            self._grid_alpha = 255
+            self._grid_alpha = self._grid_default_alpha
 
     def _create_grid_lines(self):
-        # vertical cell-sized grid line used for individual cell placement
-        self._grid_cell_x = pygame.Surface(
-            (self._grid_thickness, self._cell_size)
-        )
-        self._grid_cell_x.fill(self._grid_color)
-        self._grid_cell_x.set_alpha(self._grid_alpha)
-
-        # horizontal cell-sized grid line used for individual cell placement
-        self._grid_cell_y = pygame.Surface(
-            (self._cell_size - self._grid_thickness, self._grid_thickness)
-        )
-        self._grid_cell_y.fill(self._grid_color)
-        self._grid_cell_y.set_alpha(self._grid_alpha)
-
-
-        # grid line that traverses the entire height, used when rendering entire columns
         n_rows = self._height // self._cell_size + 2
+        n_columns = self._width // self._cell_size + 2
+
         self._column_grid_length = n_rows * self._cell_size
+        self._row_grid_length = n_columns * self._cell_size
+
+        self._grid_offset = self._cell_size - \
+            (self._grid_thickness - self._grid_thickness // 2)
+
+        # column grid lines
         self._grid_column = pygame.Surface(
             (self._grid_thickness, self._column_grid_length)
         )
-        self._grid_column.fill(self._grid_color)
-        self._grid_column.set_alpha(self._grid_alpha)
+        self._grid_column_left = pygame.Surface(
+            (self._grid_thickness // 2, self._column_grid_length)
+        )
+        self._grid_column_right = pygame.Surface(
+            (self._grid_thickness - self._grid_thickness // 2, self._column_grid_length)
+        )
 
-        # grid line that traverses the entire width, used when rendering entire rows
-        # the length is slightly longer than the width, so that the line can be offset off the screen a little
-        n_columns = self._width // self._cell_size + 2
-        self._row_grid_length = n_columns * self._cell_size
+        # row grid lines
+        self._grid_row_top = pygame.Surface(
+            (self._row_grid_length, self._grid_thickness // 2)
+        )
+        self._grid_row_bottom = pygame.Surface(
+            (self._row_grid_length, self._grid_thickness - self._grid_thickness // 2)
+        )
         self._grid_row = pygame.Surface(
             (self._row_grid_length, self._grid_thickness)
         )
-        self._grid_row.fill(self._grid_color)
-        self._grid_row.set_colorkey(self._color_key)
-        self._grid_row.set_alpha(self._grid_alpha)
 
-        # after every column, a dot is drawn in the color key (magenta)
+        # cell borders
+        self._cell_borders = pygame.Surface((self._cell_size, self._cell_size))
+
+        surfaces = (
+            self._grid_row,
+            self._grid_row_top,
+            self._grid_row_bottom,
+            self._grid_column,
+            self._grid_column_left,
+            self._grid_column_right,
+            self._cell_borders
+        )
+
+        for surface in surfaces:
+            surface.fill(self._grid_color)
+            surface.set_colorkey(self._color_key)
+            surface.set_alpha(self._grid_alpha)
+
+        # cell borders
+        pygame.draw.rect(
+            self._cell_borders,
+            self._color_key,
+            (
+                self._grid_thickness // 2,
+                self._grid_thickness // 2,
+                self._cell_size - self._grid_thickness,
+                self._cell_size - self._grid_thickness
+            )
+        )
+
+        # after every column, a dot is drawn in the color key
         # this dot will be transparent when the grid line is blitted
         # this avoids rows and columns grid lines overlapping
-        for column in range(n_columns + 2):
+        # TODO more efficient
+        for column in range(n_columns + 1):
+            rect = (
+                column * self._cell_size - self._grid_thickness + self._grid_thickness // 2,
+                0, self._grid_thickness, self._grid_thickness
+            )
+            pygame.draw.rect(
+                self._grid_row_top,
+                self._color_key, rect
+            )
+            pygame.draw.rect(
+                self._grid_row_bottom,
+                self._color_key, rect
+            )
             pygame.draw.rect(
                 self._grid_row,
-                self._color_key,
-                (
-                    column * self._cell_size - self._grid_thickness,
-                    0,
-                    self._grid_thickness,
-                    self._grid_thickness
-                )
+                self._color_key, rect
             )
 
 if __name__ == "__main__":
