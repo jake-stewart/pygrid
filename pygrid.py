@@ -28,7 +28,7 @@ DELETING = 6
 class PyGrid:
     def __init__(self, n_rows=20, n_columns=20, width=0, height=0,
                  background_color=(255, 255, 255), grid_color=(50, 50, 50),
-                 grid_fade_start=100, grid_fade_end=8, grid_percentage=0.1,
+                 grid_fade_start=55, grid_fade_end=2, grid_percentage=0.1,
                  min_cell_size=4, cell_size=40, max_cell_size=1000,
                  pan_button=MIDDLE_MOUSE, fps=60, default_grid_alpha=255,
                  allowed_zoom=True, allowed_pan=True, allowed_resize=True):
