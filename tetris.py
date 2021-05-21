@@ -129,6 +129,7 @@ class TetrisGrid(PyGrid):
             allowed_pan=True,
             allowed_zoom=True,
             background_color=background_color,
+            default_grid_alpha=100,
             fps=fps
         )
 
