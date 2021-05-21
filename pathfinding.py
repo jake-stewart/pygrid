@@ -121,6 +121,8 @@ class PathfindingGrid(DrawGrid):
             self.draw_cell(cell_x, cell_y, self.start_color, animation=self.animation)
         elif not self.end_cell:
             if self.start_cell == (cell_x, cell_y):
+                if (cell_x, cell_y) in self.walls:
+                    self.walls.remove((cell_x, cell_y))
                 self.erase_cell(cell_x, cell_y, animation=self.animation)
                 self.start_cell = None
             else:
