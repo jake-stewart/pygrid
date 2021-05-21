@@ -24,7 +24,7 @@ An implementation of Conway's Game of Life.
 * Zoom with scroll wheel and pan the screen with the middle mouse.
 * The speed of the simulation can be changed with keys 1-9.
 * The algorithm can be changed with keys a, b, or c, where the algorithms are breadth-first, best-first and A* respectively.
-* The simulation can be paused and resumed with space, or cleared entirely with escape.
+* The simulation can be paused and resumed with space.
 * The grid can be cleared with delete.
 
 <br />
