@@ -1,18 +1,12 @@
 from draw_grid import DrawGrid
 from keycodes import *
 
-
-# algorithms
-BREADTH_FIRST = 0
-BEST_FIRST = 1
-A_STAR = 2
-
 class PathfindingGrid(DrawGrid):
 
     def __init__(
             self, background_color, grid_color, cell_color, trace_color,
             start_color, end_color, scan_color, scanned_color, grid_percentage,
-            fps, default_algorithm=A_STAR):
+            fps):
 
         DrawGrid.__init__(
             self,
@@ -45,13 +39,21 @@ class PathfindingGrid(DrawGrid):
         self.explored_cells = {}
         self.walls = set()
 
-        self.algorithm = default_algorithm
+        self.heuristics = [
+            self.heuristic_dijkstra,
+            self.heuristic_best_first,
+            self.heuristic_a_star
+        ]
+        self.set_heuristic(0)
 
         self.start_color = start_color
         self.end_color = end_color
         self.trace_color = trace_color
         self.scan_color = scan_color
         self.scanned_color = scanned_color
+
+    def set_heuristic(self, index):
+        self.heuristic = self.heuristics[index]
 
     @property
     def iteration_delay(self):
@@ -160,13 +162,7 @@ class PathfindingGrid(DrawGrid):
                 return
 
             self.clear_solve()
-
-            if key == KEY_A:
-                self.algorithm = BREADTH_FIRST
-            elif key == KEY_B:
-                self.algorithm = BEST_FIRST
-            else:
-                self.algorithm = A_STAR
+            self.set_heuristic(key - KEY_A)
 
         elif KEY_1 <= key <= KEY_9:
             self.speed_index = key - KEY_1
@@ -227,9 +223,16 @@ class PathfindingGrid(DrawGrid):
         else:
             self.expand_search()
 
-    def get_heuristic(self, cell):
-        # y distance plus x distance
-        return abs(cell[0] - self.end_cell[0]) + abs(cell[1] - self.end_cell[1])
+    def heuristic_best_first(self, cell):
+        return abs(cell[0] - self.end_cell[0]) + \
+            abs(cell[1] - self.end_cell[1])
+
+    def heuristic_a_star(self, cell):
+        return abs(cell[0] - self.end_cell[0]) + \
+            abs(cell[1] - self.end_cell[1]) + self.counter
+    
+    def heuristic_dijkstra(self, cell):
+        return self.counter
 
     def evaluate_path(self, cell):
         if cell not in self.explored_cells:
@@ -277,21 +280,7 @@ class PathfindingGrid(DrawGrid):
             return
 
         if cell not in self.walls:
-            if self.algorithm == BREADTH_FIRST:
-                # breadth-first does not use a heuristic,
-                # it does first-come-first-serve
-                # so we can just append the cell to the end of the queue
-                self.queue.append((cell, 0))
-            else:
-                # both A* and best-first use a heuristic
-                heuristic = self.get_heuristic(cell)
-
-                if self.algorithm == A_STAR:
-                    # difference between the two is that A*'s heuristic
-                    # adds the path length to it
-                    heuristic += self.counter
-
-                self.insert_on_heuristic(cell, heuristic)
+            self.insert_on_heuristic(cell, self.heuristic(cell))
 
             # save the path length so we can use it for backtracking later
             self.explored_cells[cell] = self.counter
