@@ -7,7 +7,7 @@ An infinite, zoomable, pannable, resizable, multi-threaded grid written in pytho
 
 #### Requirements
 * Python 3.6+
-* Pygame `python3 -m pip install pygame`
+* pygame `python3 -m pip install pygame`
 
 <br />
 
