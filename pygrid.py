@@ -592,7 +592,13 @@ class PyGrid:
                 self._on_resize(event.w, event.h)
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self._on_mouse_down(*event.pos, event.button)
+                # not sure why, but windows gives a different keycode
+                # for mousewheel events depending on the scroll speed.
+                if event.button > 5:
+                    b = MOUSE_SCROLL_UP + event.button % 2
+                    self._on_mouse_down(*event.pos, b)
+                else:
+                    self._on_mouse_down(*event.pos, event.button)
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 self._on_mouse_up(*event.pos, event.button)
