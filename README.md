@@ -1,3 +1,5 @@
+This project sucks, check out [Grid](https://github.com/jake-stewart/grid)
+
 # PyGrid
 An infinite, zoomable, pannable, resizable, multi-threaded grid written in python using pygame. Created as a resume project.
 
